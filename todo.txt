@@ -1,0 +1,10 @@
+// TODO
+
+
+[TODO] implement findAtKeys -- do we mean "name"?
+[TODO] implement replaceChild
+
+[DONE] replaced Dictionary with SortedList
+[DONE] added childAtFret
+[DONE] added hasChildAtFret
+[DONE] check for collision in addChild
