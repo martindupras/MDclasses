@@ -72,6 +72,14 @@ tree.printTreePretty;
 "-----".postln;
 
 ~tree = tree;
+
+
+// Export
+tree.exportJSONFile("~/Command Tree savefiles/myTree.json".standardizePath);
+
+// Import
+tree.importJSONFile("~/Command Tree savefiles/myTree.json".standardizePath);
+
 )
 
 ////////////////////////////////////////////////////////////////////
@@ -111,4 +119,5 @@ tree.printTreePretty;
 ~queue.exportToEnv;
 
 ~commandToSend;
+~commandToSend = nil;
 

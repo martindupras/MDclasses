@@ -4,7 +4,7 @@
 // FOR THIS TO WORK: we need to rund MDCommandNodeTest (version 20250731) because we need a populated tree ("tree")
 
 
-// run this for debugging messages
+/*// run this for debugging messages
 (~mdDebug = true;
 
 +Object {
@@ -14,7 +14,7 @@
         };
     }
 }
-)
+)*/
 
 
 

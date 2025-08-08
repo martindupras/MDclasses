@@ -23,12 +23,14 @@ MDCommandBuilder{
 	}
 
 	listChildren {
+		var childrenNames;
 		if(this.currentNode.children.notEmpty)
 		{
 			this.currentNode.children.do({|item| postln("Fret: "+item.fret + ":" + item.name;)});
+			childrenNames =  this.currentNode.children.collect({ |item| item.name });
 
 		}{"No children".postln;}
-		^this // return the commandbuilder
+		^childrenNames // return a list of the children names
 	}
 
 	navigateToChild {

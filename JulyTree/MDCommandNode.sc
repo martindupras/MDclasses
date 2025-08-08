@@ -35,8 +35,8 @@ MDCommandNode {
 		this.fret = argFret;
 		this.parent = argParent;
 		this.children = List.new; // The children are held in a list. NOT ORDERED.
-
-		("Created node '" ++ name ++ "' with id " ++ id).postln;
+// turn to TRUE to display:
+		if (false) {("Created node '" ++ name ++ "' with id " ++ id).postln;};
 
 		if (this.children.isKindOf(List).not) {
 			("Children is not a List in node '" ++ name ++ "'! It is: " ++ this.children.class).postln;
@@ -287,6 +287,18 @@ MDCommandNode {
 			child.printTreePretty(level + 1, childIsLast);
 		};
 	}
+
+
+	asDictRecursively {
+    ^(
+        id: this.id,
+        name: this.name,
+        fret: this.fret,
+        children: this.children.collect { |child|
+            child.asDictRecursively
+        }
+    )
+}
 
 	// thingIWantToDo {
 	// 	| thingIwantToDoThingsTo | /*collection or number or something */

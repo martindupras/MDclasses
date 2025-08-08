@@ -27,13 +27,6 @@ MDCommandTree {
 		^super.new.init(rootName, rootId, nodeLimit)
 	}
 
-*fromDict { |dict|
-    var tree = MDCommandTree.new(dict[\name], dict[\id], dict[\fret]);
-    tree.root = tree.rebuildTreeFromDict(dict);
-    ^tree
-}
-
-
 	init {
 		|argName, argId, argLimit  |
 		// need a rootnode variable and assign a new node to it
@@ -102,9 +95,16 @@ MDCommandTree {
 
 		parentNode = nodeToRemove.parent;
 
+		// CHECK THAT WE'RE NOT TRYING TO REMOVE root
+		if (parentNode.notNil) {
+			("parentNode is: " + parentNode.name).postln; // DEBUG
+		} {
+			("parentNode is: nil (probably root)").postln;
+			("Can't remove root node").postln;
+			^nil;
+		};
 
-		if (parentNode.notNil){  		// CHECK THAT WE'RE NOT TRYING TO REMOVE root
-
+		if (parentNode.notNil){
 			("parentNode is:" + parentNode.name).postln;
 			("Inside removeNode").postln; //DEBUG
 
@@ -116,8 +116,7 @@ MDCommandTree {
 				this.nodeMap.removeAt(argId);
 				^nodeToRemove; // so that we can use it in swapNodes
 			}{
-("parentNode is: nil (probably root)").postln;
-				("Can't remove root node").postln;
+				("Parent node not found").postln;
 				^nil;
 			}
 		}{
@@ -157,7 +156,6 @@ MDCommandTree {
 		parent2.addChild(originalNode1);
 
 		("Nodes swapped.").postln;
-		^nil; // wouldn't make sense to return anything else here
 	}
 
 
@@ -185,7 +183,8 @@ MDCommandTree {
 	found = this.root.getNodeByNamePath(argList);
 
 	if (found.notNil){
-			^found
+	^found
+
 		}{
 			postln("Node not found at this path");
 		    ^nil
@@ -196,71 +195,5 @@ MDCommandTree {
 		root.tagByDepth(0);
 	    ^this
 	}
-
-
-
-
-
-	// added 20250807 to try JSON import/export
-rebuildTreeFromDict { |dict|
-    var buildNode, rootNode;
-
-    buildNode = { |nodeDict, parent|
-        var node = MDCommandNode.new(
-            nodeDict[\name],
-            nodeDict[\id],
-            nodeDict[\fret]
-        );
-        node.parent = parent;
-
-        if (parent.notNil) {
-            parent.addChild(node);
-				// turn to TRUE to display
-				if(false){"Attached '% to parent %'".format(node.name, parent.name).postln;}
-        };
-
-        this.nodeMap.put(node.id, node);
-        this.nodeCount = node.id.max(this.nodeCount);
-
-        nodeDict[\children].do { |childDict|
-            buildNode.(childDict, node);
-        };
-
-        node // ✅ No caret here — just return the node to the caller
-    };
-
-    rootNode = buildNode.(dict, nil); // ✅ This is now the actual root
-    ^rootNode; // ✅ Return the root from the outer method
-}
-
-
-exportJSONFile { |path|
-    var jsonString, file;
-
-    jsonString = JSONlib.convertToJSON(this.root.asDictRecursively);
-
-    file = File(path, "w");
-    if (file.isOpen) {
-        file.write(jsonString);
-        file.close;
-        "Tree exported to %".format(path).postln;
-    } {
-        "Failed to open file for writing.".warn;
-    };
-}
-
-importJSONFile { |path|
-    var jsonString, dict, rebuiltRoot;
-
-    jsonString = File(path, "r").readAllString;
-    dict = JSONlib.convertToSC(jsonString);
-
-    rebuiltRoot = this.rebuildTreeFromDict(dict);
-    this.root = rebuiltRoot;
-
-    "Tree imported from %".format(path).postln;
-}
-
-
 
 } // end of class
