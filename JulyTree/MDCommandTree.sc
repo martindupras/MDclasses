@@ -5,10 +5,10 @@
 
 /*
 This class
-  manages the tree
+  manages the tree: swapNodes, removeNodes, addNodes, load and save
   counts the number of nodes
   will be the main place for adding, removing and swapping nodes
-  navigatesthe tree for retrieval of commands
+  navigates the tree for retrieval of commands
   copilot suggests nodeMap identity dictionary that stores (id, name) pairs for fast lookup. Seems reasonable.
 
 (copilot suggests integrity validation. Not yet implemented.)

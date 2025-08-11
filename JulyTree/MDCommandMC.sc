@@ -4,15 +4,27 @@
 // The purpose of this class is to handle what is happening with the MIDI input,
 // and to call the relevant objects to handle stuff.
 
+/*
+NEW 20250811 Added some handler methods using polymorphism; see at the end of this file.
+I'm not sure if that's the right approach but let's try.
+
+They are:
+  MDMIDISource
+    MDLaunchpadSource : MDMIDISource
+    MDfootControllerSource : MDMIDISource
+    MDMIDIGuitarSource : MDMIDISource
+*/
+
+// Its business is to create the objects that need to work together, and that when they're' initiliased they received the paths that they need.
+
 MDCommandMC {
     var <> tree; // will hold the tree of commands
     var <> something, <> octave, <> pitchclass, <> gString;
     var <> currentState, <> states; // "states" is the IdentityDictionary that contains the choices
     var <> builder; // the command builder, which traverses the tree
 	var <> queue; // the queue to put commands in
-	var <> display, displayText;
+	var <> display, <> displayText;
 
-	// breaks:
 	var <> filePath;
 
     *new {
@@ -22,6 +34,7 @@ MDCommandMC {
     init {
         "MDCommandMC created".postln;
 
+		// SH would use a setter because it makes tracing easier. We can talk about it another time.
 		this.filePath = "~/Command Tree savefiles/myTree.json".standardizePath;
         this.states = IdentityDictionary[
             \idle -> \idle,
@@ -134,4 +147,40 @@ MDCommandMC {
         ("chan: " + chan).postln;
         ^this
     }
-}
+} // END OF MDCommandMD class
+
+MDMIDISource {
+	*new { ^super.new } // turns out we don't need an init method here... yet
+
+	handleMessage {|channel, type, value|
+		"MDMIDISOURCE: % % %".format(channel, type, value).postln;
+	}
+} // end of MDMIDISource class
+
+
+MDLaunchpadSource : MDMIDISource{
+
+	handleMessage {|channel, type, value|
+		"Launchpad: % % %".format(channel, type, value).postln;
+		// dispatch string and fret to the builder to navigate tree
+	}
+} // end of MDLaunchpadSource class
+
+
+MDfootControllerSource : MDMIDISource{
+	var <> dict;
+
+	dict = Dictionary.new();
+
+	handleMessage {|channel, type, value|
+		"Foot controller: % % %".format(channel, type, value).postln;
+	}
+} // end of MDLaunchpadSource class
+
+
+MDMIDIGuitarSource : MDMIDISource {
+
+	handleMessage {|channel, type, value|
+		"MIDI Guitar: % % %".format(channel, type, value).postln;
+	}
+} // end of MDLaunchpadSource class

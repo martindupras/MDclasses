@@ -1,0 +1,40 @@
+// MDPolymorphicMessaging.sc
+
+// (was MDMIDISource.sc)
+// MD 20250811
+
+// Trying to figure out how to simplify how to have lots of conditional nesting. The logic here is to redefine the same method within derived classes so that the child class has same capability but knows more about itself (e.g. it knows it's a launchpad, say)
+
+
+MDMIDISource {
+	*new { ^super.new } // turns out we don't need an init method here... yet
+
+	handleMessage {|channel, type, value|
+		"MDMIDISOURCE: % % %".format(channel, type, value).postln;
+	}
+} // end of MDMIDISource class
+
+
+MDLaunchpadSource : MDMIDISource{
+
+	handleMessage {|channel, type, value|
+		"Launchpad: % % %".format(channel, type, value).postln;
+	}
+} // end of MDLaunchpadSource class
+
+
+MDfootControllerSource : MDMIDISource{
+
+	handleMessage {|channel, type, value|
+		"Foot controller: % % %".format(channel, type, value).postln;
+	}
+} // end of MDLaunchpadSource class
+
+
+MDMIDIGuitarSource : MDMIDISource {
+	*new { ^super.new }
+
+	handleMessage {|channel, type, value|
+		"MIDI Guitar: % % %".format(channel, type, value).postln;
+	}
+} // end of MDLaunchpadSource class
