@@ -108,6 +108,50 @@ MDCommandMC {
 
 
 
+	// /////
+	// initMIDIold {
+	// 	var  myLaunchpad;
+	// 	var  softstep2,  softstep1,  midiGuitar;
+	//
+	// 	var  launchpadHandler;
+	// 	var  footControllerHandler;
+	// 	var  guitarMIDIdHandler;
+	//
+	// 	MIDIClient.init;
+	//
+	// 	// connect JUST the launchpad for now
+	// 	MIDIIn.connect(0,5); // Connects to the source at port 0, index 5 (launchpad)
+	// 	myLaunchpad = MIDIClient.sources[5].uid; // This is the actual srcID used in MIDIdef
+	// 	//~launchpad;
+	//
+	// 	// EVENTUALLY ADD:
+	// 	//softstep2 = MIDIClient.sources[0].uid; //
+	// 	//softstep1 = MIDIClient.sources[1].uid; //
+	// 	//midiGuitar = MIDIClient.sources[2].uid; //
+	//
+	// 	MIDIdef.noteOn(\midiToMC, { |vel, num, chan, srcID|
+	// 		launchpadHandler = MDLaunchpadSource.new();
+	// 		footControllerHandler = MDfootControllerSource.new();
+	// 		guitarMIDIdHandler = MDMIDIGuitarSource.new();
+	//
+	// 		if (srcID == myLaunchpad) {
+	//
+	// 			// ~mc.handleCommand(vel, num, chan, srcID); // not needed now I think.
+	// 			launchpadHandler.handleMessage(chan,\noteOn, num); // NEW...
+	//
+	// 			////NEW:
+	// 			//do something like
+	//
+	// 		} {
+	// 			("input from somewhere else").postln;
+	// 			// Your processing code here
+	// 		}
+	// 		}
+	// 	)
+	// } // end initMIDIold
+
+
+
 	/////
 	createNewTree{
 		this.tree = MDCommandTree.new("root");
