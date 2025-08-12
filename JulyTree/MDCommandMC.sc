@@ -26,6 +26,8 @@ MDCommandMC {
 	var <> queue; // the queue to put commands in
 	var <> display, <> displayText;
 	var <> filePath;
+	var <> midiManager;
+	var <> footControllerManager; // THAT NEEDS TO BE WRITTEN
 
 	*new {
 		^super.new.init();
@@ -36,7 +38,9 @@ MDCommandMC {
 
 		states = [\idles,\inTree,\inQueue]; //possibly not needed
 		this.currentState = \idle; // ADD CHECK TO VERIFY IT'S IN 'states'
-
+//TODO NEXT
+		midiManager = MDMIDISourceManager.new(builder, footControllerManager);
+//instead of
 		this.initMIDI(); // a method defined later in this file
 
 		// SH would use a setter because it makes tracing easier. We can talk about it another time.
@@ -151,7 +155,11 @@ MDCommandMC {
 } // END OF MDCommandMD class
 
 MDMIDISource {
-	*new { ^super.new } // turns out we don't need an init method here... yet
+	*new { ^super.new.init } // turns out we don't need an init method here... yet
+
+	init {
+		^this
+	}
 
 	handleMessage {|channel, type, value|
 		"MDMIDISOURCE: % % %".format(channel, type, value).postln;
@@ -171,7 +179,7 @@ MDLaunchpadSource : MDMIDISource {
 MDfootControllerSource : MDMIDISource{
 
 	// dictionary to keep midiNote -> function mappings
- var <> footSwitchActions
+ var <> footSwitchActions;
 
 	*new { ^super.new.init }  // we do need .init here!
 
