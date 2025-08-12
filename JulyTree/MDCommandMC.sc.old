@@ -27,13 +27,13 @@ MDCommandMC {
 	var <> display, <> displayText;
 	var <> filePath;
 
+
     *new {
         ^super.new.init();
     }
 
     init {
         "MDCommandMC created".postln;
-
 		states = [\idles,\inTree,\inQueue]; //possibly not needed
 		this.currentState = \idle; // ADD CHECK TO VERIFY IT'S IN 'states'
 
@@ -41,51 +41,52 @@ MDCommandMC {
 
 		// SH would use a setter because it makes tracing easier. We can talk about it another time.
 		this.filePath = "~/Command Tree savefiles/myTree.json".standardizePath;
+		/* this.states = IdentityDictionary[
+		 	\idle -> \idle,
+		 	\inTree -> \inTree,
+         	\inQueue -> \inQueue
+		 ];
+		*/
+
 
 		// create a new tree but right now it starts empty. We want it to be populated with the JSON file.
 		this.createNewTree();
 
-		// create builder
-		this.createBuilder();
-
-        //create queue
 		this.createCommandQueue();
+/*
+		// create command queue
+        this.queue = MDCommandQueue.new();
+        if (this.queue.notNil) {
+            "🔮 Queue created".postln;
+        } {
+            "🔮 Couldn't create builder for some reason".postln;
+        };*/
 
-		// create user display window
 		this.display = UserDisplay.new();
-
-		^this
+        ^this
     } // end of init method for class
 
-	/////
 	initMIDI {
-		var  myLaunchpad;
-		var  softstep2,  softstep1,  midiGuitar;
+		// put the MIDIdef here
 
-		var  launchpadHandler;
-		var  footControllerHandler;
-		var  guitarMIDIdHandler;
-
-		MIDIClient.init;
-
-		// connect JUST the launchpad for now
-		MIDIIn.connect(0,5); // Connects to the source at port 0, index 5 (launchpad)
-		myLaunchpad = MIDIClient.sources[5].uid; // This is the actual srcID used in MIDIdef
-		//~launchpad;
-
-		// EVENTUALLY ADD:
-		//softstep2 = MIDIClient.sources[0].uid; //
-		//softstep1 = MIDIClient.sources[1].uid; //
-		//midiGuitar = MIDIClient.sources[2].uid; //
-
+		// we need to also put the MIDIIn and MIDIClient and stuff
+		/*
 		MIDIdef.noteOn(\midiToMC, { |vel, num, chan, srcID|
-			launchpadHandler = MDLaunchpadSource.new();
-			footControllerHandler = MDfootControllerSource.new();
-			guitarMIDIdHandler = MDMIDIGuitarSource.new();
 
-	if (srcID == myLaunchpad) {
+	var <> launchpadHandler;
+	var <> footControllerHandler;
+	var <> guitarMIDIdHandler;
 
-		// ~mc.handleCommand(vel, num, chan, srcID); // not needed now I think.
+	launchpadHandler = MDLaunchpadSource.new();
+    footControllerHandler = MDfootControllerSource.new();
+    guitarMIDIdHandler = MDMIDIGuitarSource.new();
+
+	// DEBUG
+	//("srcID:" +srcID).postln;
+
+	if (srcID == ~launchpad) {
+
+		~mc.handleCommand(vel, num, chan, srcID);
 		launchpadHandler.handleMessage(chan,\noteOn, num); // NEW...
 
 ////NEW:
@@ -94,14 +95,14 @@ MDCommandMC {
     } {
 		("input from somewhere else").postln;
         // Your processing code here
-    }
-		}
-		)
+    };
+});
+)
+
+		*/
 	}
 
 
-
-	/////
 	createNewTree{
 		this.tree = MDCommandTree.new("root");
 		this.tree.importJSONFile(filePath);
@@ -111,10 +112,7 @@ MDCommandMC {
         } {
             "🔮 Couldn't create tree for some reason".postln;
         };
-	}
 
-	/////
-	createBuilder{
 		// create builder that navigates trees
         this.builder = MDCommandBuilder.new(this.tree);
         if (this.builder.notNil) {
@@ -124,7 +122,7 @@ MDCommandMC {
         };
 	}
 
-	/////
+
 	createCommandQueue{
 		// create command queue
         this.queue = MDCommandQueue.new();
@@ -135,7 +133,7 @@ MDCommandMC {
         };
 	}
 
-	/////
+
     handleCommand { |vel, num, chan, srcID|
         octave = (num - 36).div(12).round.asInteger;
         pitchclass = num % 12;

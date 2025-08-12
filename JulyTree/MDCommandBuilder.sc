@@ -19,6 +19,7 @@ MDCommandBuilder{
 		this.currentNode = tree.root;
 		fretPath = List[0]; // I think that should work
 		"Tree created".postln;
+		("Depth" + this.currentNode.depthTag).postln;
 		^this // return a MDCommandBuilder
 	}
 
@@ -34,7 +35,10 @@ MDCommandBuilder{
 	}
 
 	navigateToChild {
-		|argFret|
+		|argString, argFret|
+		// CHECK THAT argString corresponds to current level
+		postln("Current string level is:"+ this.currentNode.depthTag);
+		postln("argString is:"+ argString);
 		postln("argFret is:"+argFret);
 		this.currentNode = this.currentNode.getChildByfret(argFret);
 		postln("Current node name is: " +this.currentNode.name);
@@ -43,8 +47,21 @@ MDCommandBuilder{
 		^this.currentNode // return the child
 	}
 
+// previous version
+/*	navigateToChild {
+		|argFret|
+		postln("argFret is:"+argFret);
+		this.currentNode = this.currentNode.getChildByfret(argFret);
+		postln("Current node name is: " +this.currentNode.name);
+		postln("Selected fret: "+argFret + "  Command:"+ this.currentNode.name);
+		fretPath.add(this.currentNode.fret);
+		^this.currentNode // return the child
+	}*/
+
 	navigateToChildByName {
-		|argName|
+		|argString, argName|
+
+		//TODO: check that argString corresponds to current level
 		var nextNode;
 		postln("argName is:"+argName);
 		nextNode = this.currentNode.getChildByName(argName);
@@ -60,6 +77,25 @@ MDCommandBuilder{
 		}
 		^this.currentNode // return the child
 	}
+
+//previous version:
+/*	navigateToChildByName {
+		|argName|
+		var nextNode;
+		postln("argName is:"+argName);
+		nextNode = this.currentNode.getChildByName(argName);
+		if(nextNode.notNil){
+			this.currentNode = nextNode;
+			postln("Current node name is: " +this.currentNode.name);
+			postln("Selected name: "+argName + "  Command:"+ this.currentNode.name);
+			fretPath.add(this.currentNode.fret);
+
+			postln("Path: " + this.currentNode.getFullPathString);			//  Print path
+		}{
+			postln("Available children: " + this.currentNode.children.collect(_.name).join(", "));
+		}
+		^this.currentNode // return the child
+	}*/
 
 	printCurrentPath{
 		this.currentNode.getPathToRoot.postln;
