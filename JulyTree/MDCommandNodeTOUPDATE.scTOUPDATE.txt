@@ -20,7 +20,7 @@ Notes:
 MDCommandNode {
 
 	var <> name, <> id, <> parent, <> children, <> fret; // maybe add 'payload' or 'command''
-	var <> depthTag; // to store the depth of the node. 0 is root. // in effect string // APPARENTLY STUPID. REMOVE.
+	var <> depthTag; // to store the depth of the node. 0 is root. // in effect string
 
 
 // default arguments probably never used, but just in case. Note that the only node without a parent should be the root.

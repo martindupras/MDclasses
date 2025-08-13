@@ -37,7 +37,7 @@ MDCommandBuilder{
 	navigateToChild {
 		|argString, argFret|
 		// CHECK THAT argString corresponds to current level
-		postln("Current string level is:"+ this.currentNode.depthTag);
+		postln("Current string level is:"+ this.currentNode.getDepth);
 		postln("argString is:"+ argString);
 		postln("argFret is:"+argFret);
 		this.currentNode = this.currentNode.getChildByfret(argFret);
