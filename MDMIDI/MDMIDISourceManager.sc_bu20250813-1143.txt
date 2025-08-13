@@ -1,0 +1,289 @@
+// MDMIDISourceManager.sc
+// MD 20250812
+
+// class(es) to setup and store symbols for MIDI inputs so that they can be accessed by symbol rather than inhuman numbers.
+
+// MDMIDISourceManager.sc
+// MD 20250812
+
+// Class to setup and store symbols for MIDI inputs so they can be accessed by symbol rather than numeric srcIDs.
+
+// MDMIDISourceManager.sc
+// MD 20250813
+
+MDMIDISourceManager {
+	var <>midiDevicesDict; // dict of (device, srcID) pairs
+	var <>deviceBindingsDict; // dict of (device, preprocessor) pairs
+
+    // No longer used but keep these for troubleshooting
+    var <>launchpadPreprocessor, <>footControllerPreprocessor, <>guitarMIDIdPreprocessor;
+    var <>launchpadID, <>footControllerID, <>guitarID;
+
+    *new { |builder, launchpad, footController, guitarMIDI|
+        ^super.new.init(builder, launchpad, footController, guitarMIDI);
+    }
+
+    init { |builder, launchpad, footController, guitarMIDI|
+        this.launchpadPreprocessor = launchpad;
+        this.footControllerPreprocessor = footController;
+        this.guitarMIDIdPreprocessor = guitarMIDI;
+
+        MIDIClient.init;
+        MIDIIn.connectAll;
+
+        midiDevicesDict = Dictionary.new;
+        deviceBindingsDict = Dictionary.new;
+
+        this.findDevices;
+
+        launchpadID = this.getSrcID(\LPMiniMK3_MIDI_Out);
+        footControllerID = this.getSrcID(\KEYBOARD);
+        guitarID = this.getSrcID(\to_SC);
+
+        this.bindDevice(\LPMiniMK3_MIDI_Out, launchpadPreprocessor);
+        this.bindDevice(\KEYBOARD, footControllerPreprocessor);
+        this.bindDevice(\to_SC, guitarMIDIdPreprocessor);
+
+        this.setupMIDIDef;
+        ^this
+    }
+
+    findDevices {
+        MIDIClient.sources.do { |src|
+            var symbol = src.device.replace(" ", "_").asSymbol;
+            midiDevicesDict[symbol] = src.uid;
+        };
+    }
+
+    listDevices {
+        "🎛 Connected MIDI Devices:".postln;
+        midiDevicesDict.keysValuesDo { |symbol, uid|
+            ("% => %".format(symbol, uid)).postln;
+        };
+    }
+
+    getSrcID { |symbol|
+        ^midiDevicesDict[symbol];
+    }
+
+    bindDevice { |symbol, preprocessor|
+        var srcID = this.getSrcID(symbol);
+        if (srcID.notNil) {
+            deviceBindingsDict[srcID] = preprocessor;
+            ("🔗 Bound % to preprocessor %".format(symbol, preprocessor.class.name)).postln;
+        } {
+            ("⚠️ Could not find device: " + symbol).warn;
+        }
+    }
+
+    setupMIDIDef {
+        MIDIdef.noteOn(\midiToMC, { |vel, num, chan, srcID|
+            var preprocessor = deviceBindingsDict[srcID];
+            if (preprocessor.notNil) {
+                preprocessor.handleMessage(chan, \noteOn, num);
+            } {
+                ("⚠️ No preprocessor bound for srcID: " + srcID).postln;
+            }
+        });
+    }
+}
+
+
+
+
+OldMDMIDISourceManager {/*
+    var <>midiDevicesDict;
+    var <>launchpadHandler, <>footControllerHandler, <>guitarMIDIdHandler;
+    var <>launchpadID, <>footControllerID, <>guitarID;
+
+    *new { |builder, launchpad, footController, guitarMIDI|
+        ^super.new.init(builder, launchpad, footController, guitarMIDI);
+    }
+
+    init { |builder, launchpad, footController, guitarMIDI|
+        this.launchpadHandler = launchpad;
+        this.footControllerHandler = footController;
+        this.guitarMIDIdHandler = guitarMIDI;
+
+        MIDIClient.init;
+        MIDIIn.connectAll;
+
+        midiDevicesDict = Dictionary.new;
+        this.findDevices;
+
+        launchpadID = this.getSrcID(\LPMiniMK3_MIDI_Out);
+        footControllerID = this.getSrcID(\KEYBOARD);
+        guitarID = this.getSrcID(\to_SC);
+
+        this.setupMIDIDef;
+        ^this
+    }
+
+    findDevices {
+        MIDIClient.sources.do { |src|
+            var symbol = src.device.replace(" ", "_").asSymbol;
+            midiDevicesDict[symbol] = src.uid;
+        };
+    }
+
+    listDevices {
+        "🎛 Connected MIDI Devices:".postln;
+        midiDevicesDict.keysValuesDo { |symbol, uid|
+            ("% => %".format(symbol, uid)).postln;
+        };
+    }
+
+    getSrcID { |symbol|
+        ^midiDevicesDict[symbol];
+    }
+
+    setupMIDIDef {
+        MIDIdef.noteOn(\midiToMC, { |vel, num, chan, srcID|
+            switch(srcID,
+                launchpadID, {
+                    launchpadHandler.handleMessage(chan, \noteOn, num);
+                },
+                footControllerID, {
+                    footControllerHandler.handleMessage(chan, \noteOn, num);
+                },
+                guitarID, {
+                    guitarMIDIdHandler.handleMessage(chan, \noteOn, num);
+                },
+                {
+                    ("Unknown MIDI source: " + srcID).postln;
+                }
+            );
+        });
+    }
+
+	// use this to change what device is doing what from sclang without having to recompile library
+	bindDevice { |symbol, handler|
+    var srcID = this.getSrcID(symbol);
+    if (srcID.notNil) {
+        deviceBindingsDict[srcID] = handler;
+        ("🔗 Bound % to handler %".format(symbol, handler.class.name)).postln;
+    } {
+        ("⚠️ Could not find device: " + symbol).warn;
+    }
+}*/
+
+}
+
+
+OlderMDMIDISourceManager {
+
+  /*  var < midiDevicesDict;
+
+    *new {|argBuilder, argLaunchpad, argFootController, argGuitarMIDI |
+        ^super.new.init(argBuilder, argLaunchpad, argFootController, argGuitarMIDI);
+    }
+
+    init {|argBuilder, argLaunchpad, argFootController, argGuitarMIDI |
+		var builder, launchpad, footController, guitarMIDI;
+
+		this.builder = argBuilder;
+		this.launchpad = argLaunchpad;
+		this.footController = argFootController;
+		this.guitarMIDI = argGuitarMIDI;
+
+
+		// start MIDIClient if not started already
+        MIDIClient.init;   // start MIDI listening in SC
+		MIDIIn.connectAll; // connect all MIDI devices present; filtering will be done by srcID
+
+		// create dict to keep [\symbol, srcID] pairs so that we can recall MIDI devices by name with getSrcID
+        midiDevicesDict = Dictionary.new;
+
+		// list the devices and store in the dict
+        this.findDevices;
+
+		// define MIDIdef to receive all MIDI events
+		MIDIdef.noteOn(\midiToMC, { |vel, num, chan, srcID|
+			switch(srcID,
+				launchpadID, {
+					launchpadHandler.handleMessage(chan, \noteOn, num);
+				},
+				footControllerID, {
+					footControllerHandler.handleMessage(chan, \noteOn, num);
+				},
+				guitarID, {
+					guitarMIDIdHandler.handleMessage(chan, \noteOn, num);
+				},
+				{
+					("Unknown MIDI source: " + srcID).postln;
+				}
+			);P
+		});
+
+        ^this
+    }
+
+    findDevices {
+        MIDIClient.midiDevicesDict.do { |src|
+            var name = src.name;
+            var uid = src.uid;
+            var symbol = name.replace(" ", "_").asSymbol;
+            midiDevicesDict[symbol] = uid;
+        };
+    }
+
+    listDevices {
+        "🎛 Connected MIDI Devices:".postln;
+        midiDevicesDict.keysValuesDo { |symbol, uid|
+            ("% => %".format(symbol, uid)).postln;
+        };
+    }
+
+    getSrcID { |symbol|
+        ^midiDevicesDict[symbol] // return the srcID for that symbol
+    }
+
+/* NO LONGER NEEDED... I think
+
+// handle the SC MIDI listening stuff
+		initMIDI {
+		//var midiManager;
+		var launchpadHandler, footControllerHandler, guitarMIDIdHandler;
+		var launchpadID, footControllerID, guitarID;
+
+		// create the MIDI source manager
+		//midiManager = MDMIDISourceManager.new;
+
+		// list devices for debugging and to know the symbol names
+		midiManager.listDevices;
+
+		// create handler objects
+		launchpadHandler = MDLaunchpadSource.new;
+		footControllerHandler = MDfootControllerSource.new;
+		guitarMIDIdHandler = MDMIDIGuitarSource.new;
+
+		// get symbolic srcIDs to put in dictionary
+		launchpadID = midiManager.getSrcID(\LPMiniMK3_MIDI_Out); // get those by using listDevices and copy-pasting from the console
+		footControllerID = midiManager.getSrcID(\KEYBOARD); // nanokey2
+		guitarID = midiManager.getSrcID(\to_SC); // example
+
+		// connect MIDI device input
+		//MIDIIn.connect(0, MIDIClient.midiDevicesDict.detectIndex { |src| src.uid == launchpadID });
+/*		MIDIIn.connectAll;*/
+
+/*		// define MIDIdef to receive all MIDI events
+		MIDIdef.noteOn(\midiToMC, { |vel, num, chan, srcID|
+			switch(srcID,
+				launchpadID, {
+					launchpadHandler.handleMessage(chan, \noteOn, num);
+				},
+				footControllerID, {
+					footControllerHandler.handleMessage(chan, \noteOn, num);
+				},
+				guitarID, {
+					guitarMIDIdHandler.handleMessage(chan, \noteOn, num);
+				},
+				{
+					("Unknown MIDI source: " + srcID).postln;
+				}
+			);P
+		});*/
+
+	}
+	// end initMIDI*/*/
+}

@@ -3,19 +3,19 @@
 // MD 20250813
 
 //previously known as MDCommandMC
-OldCommandManager {
+CommandManager {
     var something, octave, pitchclass, gString;
-    var currentState;
+    var <> currentState; // getter and setters for outside
     var states;
-    var tree;
-    var builder;
-    var queue;
-    var display, displayText;
+    var <>tree;
+    var <>builder;
+    var <>queue;
+    var <>display, <>displayText;
     var filePath;
-    var midiManager;
+    var <>midiManager;
 
     var launchpadHandler, footControllerHandler, guitarHandler;
-    var launchpadID, footControllerID, guitarID;
+    var <>launchpadID, <>footControllerID, <>guitarID;
 
     *new {
         ^super.new.init;
@@ -88,4 +88,4 @@ OldCommandManager {
 }
 
 // alias to old name
-OldMDCommandMC : CommandManager {}
+MDCommandMC : CommandManager {}

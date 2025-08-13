@@ -73,39 +73,7 @@ MDCommandNode {
 	}
 
 	// revised after talking with SH/PM
-	// now with lots of added error checking 20250813-1233
 	createChild { |argName, argId, argFret|
-		var child;
-
-		if (argName.isKindOf(String).not) {
-			("❌ createChild error: argName must be a String, got " ++ argName.class).warn;
-			^nil;
-		};
-
-		if (argId.isKindOf(Integer).not) {
-			("❌ createChild error: argId must be an Integer, got " ++ argId.class).warn;
-			^nil;
-		};
-
-		if (argFret.isKindOf(Integer).not) {
-			("❌ createChild error: argFret must be an Integer, got " ++ argFret.class).warn;
-			^nil;
-		};
-
-		child = this.getChildByName(argName);
-
-		if (child.isNil) {
-			child = MDCommandNode.new(argName, argId, argFret);
-			this.addChild(child);
-			("✅ Created new child node: " ++ argName ++ " (ID: " ++ argId ++ ", Fret: " ++ argFret ++ ")").postln;
-		} {
-			("ℹ️ Child node already exists: " ++ argName).postln;
-		};
-
-		^child;
-	}
-
-/*	createChild { |argName, argId, argFret|
 		var child;
 		child = getChildByName(argName);
 		if (child.isNil) {
@@ -114,7 +82,7 @@ MDCommandNode {
 			this.addChild(child);
 		}
 		^child; // return child, which is a node
-	}*/
+	}
 
 	/* older version:
 		createChild { |argName, argId, argFret|
@@ -135,31 +103,10 @@ MDCommandNode {
 	childNameExists{ |argName|
 		^children.any { |c| c.name == argName };
 	}
-// new with lots of error checking:
+
 	getChildByName { |argName|
-		var found;
-		if (argName.isKindOf(String).not) {
-			("❌ getChildByName error: argName must be a String, got " ++ argName.class).warn;
-			^nil;
-		};
-
-		found = children.detect { |c| c.name == argName };
-
-		if (found.isNil) {
-			("🔍 getChildByName: No child found with name '" ++ argName ++ "'").postln;
-		} {
-			("🔍 getChildByName: Found child '" ++ argName ++ "'").postln;
-		};
-
-		^found;
-	}
-
-
-
-	// previous working version that had no error checking
-/*	getChildByName { |argName|
 		^children.detect { |c| c.name == argName };
-	}*/
+	}
 
 	// SEEMS WORKING!
 	getChildById { |argID|

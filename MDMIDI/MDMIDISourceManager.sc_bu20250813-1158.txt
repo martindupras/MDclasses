@@ -11,7 +11,7 @@
 // MDMIDISourceManager.sc
 // MD 20250813
 
-RetiredMDMIDISourceManager {
+MDMIDISourceManager {
 	var <>midiDevicesDict; // dict of (device, srcID) pairs
 	var <>deviceBindingsDict; // dict of (device, preprocessor) pairs
 
