@@ -32,9 +32,19 @@ MIDIInputManager {
 		footControllerID = this.getSrcID(\nanoKEY2_KEYBOARD);
 		guitarID = this.getSrcID(\MD_IAC_to_SC);
 
+		// broken:
+		//launchpadID = this.getSrcID(\LPMiniMK3_MIDI_Out);
+		//footControllerID = this.getSrcID(\KEYBOARD);
+		//guitarID = this.getSrcID(\to_SC);
+
 		this.bindDevice(launchpadID, launchpadHandler);
 		this.bindDevice(footControllerID, footControllerHandler);
 		this.bindDevice(guitarID, guitarHandler);
+
+/*		this.bindDevice(launchpadID, launchpadHandler);
+		this.bindDevice(\LPMiniMK3_MIDI_Out, launchpadHandler);
+		this.bindDevice(\KEYBOARD, footControllerHandler);
+		this.bindDevice(\to_SC, guitarHandler);*/
 
 		this.setupMIDIDef;
 		^this
@@ -50,6 +60,20 @@ MIDIInputManager {
 			deviceUIDs[symbol] = src.uid;
 		};
 	}
+	//older version
+	/*scanDevices {
+    MIDIClient.sources.do { |src|
+        var symbol = (src.device ++ "_" ++ src.name).replace(" ", "_").asSymbol;
+        deviceUIDs[symbol] = src.uid;
+    };
+}*/
+	//earlier version
+/*	scanDevices {
+		MIDIClient.sources.do { |src|
+			var symbol = src.device.replace(" ", "_").asSymbol;
+			deviceUIDs[symbol] = src.uid;
+		};
+	}*/
 
 	listDevices {
 		"🎛 Connected MIDI Devices:".postln;
@@ -69,21 +93,33 @@ MIDIInputManager {
 	}
 
 	bindDevice { |keyOrID, handler|
-		var srcID;
+    var srcID;
 
-		if (keyOrID.isKindOf(Symbol)) {
-			srcID = this.getSrcID(keyOrID);
-		} {
-			srcID = keyOrID;
-		};
+    if (keyOrID.isKindOf(Symbol)) {
+        srcID = this.getSrcID(keyOrID);
+    } {
+        srcID = keyOrID;
+    };
 
+    if (srcID.notNil) {
+        deviceHandlers[srcID] = handler;
+        ("🔗 Bound srcID % to handler %".format(srcID, handler.class.name)).postln;
+    } {
+        ("⚠️ Could not bind device: " ++ keyOrID).warn;
+    }
+}
+
+
+	//older
+/*	bindDevice { |symbol, handler|
+		var srcID = this.getSrcID(symbol);
 		if (srcID.notNil) {
 			deviceHandlers[srcID] = handler;
-			("🔗 Bound srcID % to handler %".format(srcID, handler.class.name)).postln;
+			("🔗 Bound % to handler %".format(symbol, handler.class.name)).postln;
 		} {
-			("⚠️ Could not bind device: " ++ keyOrID).warn;
+			("⚠️ Could not find device: " + symbol).warn;
 		}
-	}
+	}*/
 
 	setupMIDIDef {
 		MIDIdef.noteOn(\midiToManager, { |vel, num, chan, srcID|
@@ -95,11 +131,7 @@ MIDIInputManager {
 			}
 		});
 	}
-} // end of MIDIInputManager class
-
-
-
-
+}
 
 //////////////////////////////////////////////////////
 // Base class for MIDI input handlers
