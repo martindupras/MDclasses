@@ -1,6 +1,6 @@
 // MIDIInputManager.sc
 // Refactored from MDMIDISourceManager.sc
-// MD 20250814
+// MD 20250813
 
 // Main class to manage MIDI input devices and route messages to appropriate handlers
 MIDIInputManager {
@@ -9,8 +9,6 @@ MIDIInputManager {
 
 	var <> currentMode = \idle; // will store the mode that the foot controller has put us in
 	var <>builder, <>queue;
-	var <>commandManager;
-
 
 	// Legacy vars for debugging
 	var <>launchpadHandler, <>footControllerHandler, <>guitarHandler, <>launchpadDAWHandler;
@@ -27,9 +25,6 @@ MIDIInputManager {
 
 		this.launchpadHandler = argLaunchpad ?? LaunchpadHandler.new;
 		this.footControllerHandler = argFootController ?? FootControllerHandler.new(this);
-		//DEBUG:
-		("🧪 footControllerHandler manager is: " ++ footControllerHandler.manager).postln;
-
 		this.guitarHandler = argGuitarMIDI ?? GuitarMIDIHandler.new(this);
 		this.launchpadDAWHandler = argLaunchpadDAW ?? LaunchpadDAWHandler.new;
 
@@ -114,6 +109,32 @@ MIDIInputManager {
 	}
 
 
+	//older version
+/*	bindDevice { |keyOrID, handler|
+		var srcID;
+
+		if (keyOrID.isKindOf(Symbol)) {
+			srcID = this.getSrcID(keyOrID);
+		} {
+			srcID = keyOrID;
+		};
+
+		if (srcID.isNil) {
+			("⚠️ Could not bind device: " ++ keyOrID ++ " (srcID is nil)").warn;
+			^this;
+		};
+
+		if (handler.isNil) {
+			("⚠️ No handler provided for srcID: " ++ srcID).warn;
+			^this;
+		};
+
+		deviceHandlers[srcID] = handler;
+		("🔗 Bound srcID % to handler %".format(srcID, handler.class.name)).postln;
+	}*/
+
+
+
 	setupMIDIDef {
 		MIDIdef.noteOn(\midiToManager, { |vel, num, chan, srcID|
 			var handler = deviceHandlers[srcID];
@@ -127,39 +148,20 @@ MIDIInputManager {
 
 	resetTreeNavigation {
 		currentMode = \idle;
-		commandManager.currentState = \idle;  // ← Add this line
 		builder.resetNavigation;
-		{commandManager.updateDisplay;}.defer;
 		"🔄 Tree navigation reset.".postln;
 	}
-
-/*	resetTreeNavigation {
-		currentMode = \idle;
-		builder.resetNavigation;
-		//manager.updateDisplay;      // update use display
-		"🔄 Tree navigation reset.".postln;
-	}*/
 
 	startTreeNavigation {
-		currentMode = \inTree;
-		commandManager.currentState = \inTree;  // ← Add this line
-		builder.resetNavigation;
-		{commandManager.updateDisplay;}.defer;
-		"🌲 Tree navigation started.".postln;
-	}
-
-/*	startTreeNavigation {
 		currentMode = \treeNav;
 		builder.resetNavigation;
-		//manager.updateDisplay;      // update use display
 		"🌲 Tree navigation started.".postln;
-	}*/
+	}
 
 	addCurrentNodeToQueue {
 		var name = builder.getCurrentName;
 		queue.enqueueCommand(name);
 		builder.resetNavigation;
-		//manager.updateDisplay;      // update use display
 		"📥 Added node to queue and restarted navigation.".postln;
 	}
 
@@ -169,45 +171,48 @@ MIDIInputManager {
 		("📤 Sent queue as OSC: " ++ path).postln;
 	}
 
+
+
+
 } // end of MIDIInputManager class
 
 
 //////////////////////////////////////////////////////
-// Previously base class for MIDI input handlers - now just used for unknown devices
+// Base class for MIDI input handlers
 // Previously: MDMIDIPreprocessor
 //////////////////////////////////////////////////////
 
 MIDIInputHandler {
-	var <>manager;
+    var <>manager;
 
-	*new { |manager| ^super.new.init(manager); }
+    *new { |manager| ^super.new.init(manager); }
 
-	init { |manager|
-		this.manager = manager;
-		^this
-	}
+    init { |manager|
+        this.manager = manager;
+        ^this
+    }
+
+    handleMessage { |channel, type, value|
+        "MIDIInputHandler: % % %".format(channel, type, value).postln;
+    }
+}
+
+/*MIDIInputHandler {
+	*new { ^super.new.init }
+
+	init { ^this }
 
 	handleMessage { |channel, type, value|
 		"MIDIInputHandler: % % %".format(channel, type, value).postln;
 	}
-}
-
+}*/
 
 //////////////////////////////////////////////////////
 // Launchpad Handler
 // Previously: MDLaunchpadPreprocessor
 //////////////////////////////////////////////////////
 
-LaunchpadHandler  {
-	var <>manager;
-
-	*new { |manager| ^super.new.init(manager); }
-
-	init { |manager|
-		this.manager = manager;
-		^this
-	}
-
+LaunchpadHandler : MIDIInputHandler {
 	handleMessage { |channel, type, value|
 		"Launchpad: % % %".format(channel, type, value).postln;
 		// Future: dispatch to builder
@@ -217,7 +222,54 @@ LaunchpadHandler  {
 // Alias for compatibility
 LaunchpadSource : LaunchpadHandler {}
 
-LaunchpadDAWHandler {
+LaunchpadDAWHandler : MIDIInputHandler {
+	handleMessage { |channel, type, value|
+		"LaunchpadDAW: % % %".format(channel, type, value).postln;
+		// Future: dispatch to builder
+	}
+}
+//////////////////////////////////////////////////////
+// Foot Controller Handler
+// Previously: MDfootControllerPreprocessor
+//////////////////////////////////////////////////////
+
+FootControllerHandler : MIDIInputHandler {
+	var <>manager;
+
+	*new { |manager| ^super.new.init(manager); }
+
+
+	init { |manager|
+		this.manager = manager;
+		("✅ FootControllerHandler received manager: " ++ manager.class.name).postln;
+		^this
+	}
+
+
+	handleMessage { |channel, type, value|
+		if (type === \noteOn) {
+			switch (value,
+				36, { manager.resetTreeNavigation },
+				38, { manager.startTreeNavigation },
+				40, { manager.addCurrentNodeToQueue },
+				41, { manager.sendQueueAsOSC },
+				{ ("⚠️ No action for note: " ++ value).postln }
+			);
+		}
+	}
+}
+
+
+
+// Alias
+FootControllerSource : FootControllerHandler {}
+
+//////////////////////////////////////////////////////
+// Guitar MIDI Handler
+// Previously: MDMIDIGuitarPreprocessor
+//////////////////////////////////////////////////////
+
+GuitarMIDIHandler : MIDIInputHandler {
 	var <>manager;
 
 	*new { |manager| ^super.new.init(manager); }
@@ -227,138 +279,21 @@ LaunchpadDAWHandler {
 		^this
 	}
 
-	handleMessage { |channel, type, value|
-		// DO NOTHING. We want to ignore LaunchpadDAW messages.
-		//"IGNORE THIS DEVICE - LaunchpadDAW: % % %".format(channel, type, value).postln;
-
-	}
-}
-//////////////////////////////////////////////////////
-// Foot Controller Handler
-// Previously: MDfootControllerPreprocessor
-//////////////////////////////////////////////////////
-
-FootControllerHandler {
-	var <>manager;
-
-	*new { |manager|
-		if (manager.isNil) {
-			Error("FootControllerHandler requires a manager").throw;
-		};
-		^super.new.init(manager);
-	}
-
-	init { |manager|
-		this.manager = manager;
-		("✅ FootControllerHandler received manager: " ++ manager).postln;
-		^this
-	}
-
-	handleMessage { |channel, type, value|
-		("🧪 manager class is: " ++ manager.class).postln;
-
-		if (type === \noteOn) {
-			switch (value,
-				36, {
-					manager.resetTreeNavigation;
-					{manager.commandManager.updateDisplay;}.defer;
-				},
-				38, {
-					manager.startTreeNavigation;
-					{manager.commandManager.updateDisplay;}.defer;
-				},
-				40, {
-					manager.addCurrentNodeToQueue;
-					{manager.commandManager.updateDisplay;}.defer;
-				},
-				41, { manager.sendQueueAsOSC;
-					{manager.commandManager.updateDisplay; }.defer;
-
-				},
-				{ ("⚠️ No action for note: " ++ value).postln }
-			);
+	handleMessage { |channel, type, pitch|
+		if (type === \noteOn and: { manager.currentMode == \treeNav }) {
+			var fret = pitch - 41; // Assuming 41 is first fret
+			if (channel == 1) {
+				manager.builder.navigateByFret(6, fret); // string 6
+			} {
+				if (channel == 2) {
+					manager.builder.navigateByFret(5, fret); // string 5
+				}
+			}
 		}
 	}
 }
 
-// Alias
-//FootControllerSource : FootControllerHandler {}
-
-//////////////////////////////////////////////////////
-// Guitar MIDI Handler
-// Previously: MDMIDIGuitarPreprocessor
-//////////////////////////////////////////////////////
-
-
-
-
-GuitarMIDIHandler {
-    var <>manager;
-
-    *new { |manager|
-        var instance = super.new;
-        instance.init(manager);
-        ^instance
-    }
-
-    init { |manager|
-        this.manager = manager;
-        ("✅ GuitarMIDIHandler received manager: " ++ manager).postln;
-        ^this
-    }
-
-    handleMessage { |channel, type, pitch|
-        // ✅ Confirm method is being called
-        ("📥 handleMessage called with channel: " ++ channel ++ ", type: " ++ type ++ ", pitch: " ++ pitch).postln;
-
-        // ✅ Check type
-        if (type === \noteOn) {
-            "✅ type is noteOn".postln;
-        } {
-            "❌ type is not noteOn".postln;
-        };
-
-        // ✅ Check current mode
-        if (manager.currentMode == \inTree) {
-            "✅ currentMode is treeNav".postln;
-        } {
-            ("❌ currentMode is: " ++ manager.currentMode).postln;
-        };
-
-        // ✅ Proceed only if both conditions are met
-        if (type === \noteOn and: { manager.currentMode == \inTree }) {
-            var stringBasePitches = (
-                0: 40, // E string (6th)
-                1: 45, // A string (5th)
-                2: 50, // D string (4th)
-                3: 55, // G string (3rd)
-                4: 59, // B string (2nd)
-                5: 64  // E string (1st)
-            );
-
-            var basePitch = stringBasePitches[channel];
-            if (basePitch.notNil) {
-                var fret = pitch - basePitch;
-                var stringNumber = 6 - channel;
-
-                // ✅ Debug conversion
-                ("🎸 Received MIDI note: " ++ pitch ++
-                    " on channel: " ++ channel ++
-                    " → string: " ++ stringNumber ++
-                    ", base pitch: " ++ basePitch ++
-                    ", calculated fret: " ++ fret).postln;
-
-                manager.builder.navigateByFret(stringNumber, fret);
-            } {
-                ("⚠️ Unrecognized channel: " ++ channel ++ ". No base pitch defined.").postln;
-            }
-        };
-
-        { manager.commandManager.updateDisplay; }.defer;
-    }
-}
-
 
 
 // Alias
-//GuitarMIDISource : GuitarMIDIHandler {}
+GuitarMIDISource : GuitarMIDIHandler {}

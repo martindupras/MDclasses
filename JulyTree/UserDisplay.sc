@@ -4,10 +4,17 @@
 // Used to display states of the system and such.
 
 UserDisplay {
-	var window, stateText, queueText , lastCommandText, userChoicesText;
+
+	var <>window;
+	var <>stateText;
+	var <>queueText;
+	var <>lastCommandText;
+	var <>userChoicesText;
+
+	//var window, stateText, queueText , lastCommandText, userChoicesText;
 
 	*new{
-		^super.new.init()
+		^super.new.init
 	}
 
 	init{
@@ -24,7 +31,7 @@ UserDisplay {
 
 		// add layouts to the window
 		window.layout =
-			HLayout(
+		HLayout(
 			stateText,
 			queueText,
 			lastCommandText,

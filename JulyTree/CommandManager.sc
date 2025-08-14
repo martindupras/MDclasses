@@ -13,6 +13,8 @@ CommandManager {
     var <>display, <>displayText;
     var filePath;
     var <>midiManager;
+	var <>commandManager;
+
 
     var launchpadHandler, footControllerHandler, guitarHandler;
     var <>launchpadID, <>footControllerID, <>guitarID;
@@ -34,21 +36,19 @@ CommandManager {
         this.createCommandQueue;
         display = UserDisplay.new;
 
-        launchpadHandler = LaunchpadHandler.new;
+		midiManager = MIDIInputManager.new(builder, nil, nil, nil);
+		midiManager.commandManager = this;
+
+
+/*        launchpadHandler = LaunchpadHandler.new;
         footControllerHandler = FootControllerHandler.new;
         guitarHandler = GuitarMIDIHandler.new;
 
-        midiManager = MIDIInputManager.new(builder, launchpadHandler, footControllerHandler, guitarHandler);
+        midiManager = MIDIInputManager.new(builder, launchpadHandler, footControllerHandler, guitarHandler);*/
 
         ^this
     }
 
-/* RETIRED */
-	// initMIDI {
-	// 	launchpadID = midiManager.getSrcID(\LPMiniMK3_MIDI_Out);
-	// 	footControllerID = midiManager.getSrcID(\KEYBOARD);
-	// 	guitarID = midiManager.getSrcID(\to_SC);
-	// }
 
     createNewTree {
         tree = MDCommandTree.new("root");
@@ -85,6 +85,39 @@ CommandManager {
         ("chan: " + chan).postln;
         ^this
     }
+
+	updateDisplay {
+		var stateText, choicesText, children;
+
+		// Show current state
+		stateText = "🧭 State: " ++ currentState.asString;
+		choicesText = "⚠️ No choices available.";
+
+		// Show choices if we're in tree navigation mode
+		if (currentState == \inTree) {
+			children = builder.currentNode.children;
+			if (children.notEmpty) {
+				choicesText = "🎚 Choices:\n" ++ children.collect { |c|
+					"Fret " ++ c.fret ++ ": " ++ c.name
+				}.join("\n");
+			} {
+				choicesText = "⚠️ No choices available.";
+			};
+		} {
+			choicesText = "";
+		};
+
+
+("🖥 Updating display...").postln;
+    ("State text: " ++ stateText).postln;
+    ("Choices text: " ++ choicesText).postln;
+
+		// Update individual display fields
+		{display.stateText.string = stateText;}.defer;
+		{display.userChoicesText.string = choicesText;}.defer;
+	}
+
+
 }
 
 // alias to old name
