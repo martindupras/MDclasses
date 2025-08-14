@@ -8,17 +8,20 @@ MIDIInputManager {
 	var <>deviceHandlers;     // Dictionary: srcID -> handler object
 
 	// Legacy vars for debugging
-	var <>launchpadHandler, <>footControllerHandler, <>guitarHandler;
-	var <>launchpadID, <>footControllerID, <>guitarID;
+	var <>launchpadHandler, <>footControllerHandler, <>guitarHandler, <>launchpadDAWHandler;
+	var <>launchpadID, <>launchpadDAWID, <>footControllerID, <>guitarID;
 
-	*new { |builder, launchpad, footController, guitarMIDI|
-		^super.new.init(builder, launchpad, footController, guitarMIDI);
+	*new { |builder, launchpad, footController, guitarMIDI, launchpadDAW|
+		^super.new.init(builder, launchpad, footController, guitarMIDI, launchpadDAW);
 	}
 
-	init { |builder, launchpad, footController, guitarMIDI|
+	init { |builder, launchpad, footController, guitarMIDI, launchpadDAW|
+		// is builder passed to anything ever?
 		this.launchpadHandler = launchpad;
 		this.footControllerHandler = footController;
 		this.guitarHandler = guitarMIDI;
+		this.launchpadDAWHandler = launchpadDAW;
+
 
 		MIDIClient.init;
 		MIDIIn.connectAll;
@@ -29,12 +32,14 @@ MIDIInputManager {
 		this.scanDevices;
 
 		launchpadID = this.getSrcID(\Launchpad_Mini_MK3_LPMiniMK3_MIDI_Out);
+		launchpadDAWID  = this.getSrcID(\Launchpad_Mini_MK3_LPMiniMK3_DAW_Out); // so that we can filter it out
 		footControllerID = this.getSrcID(\nanoKEY2_KEYBOARD);
 		guitarID = this.getSrcID(\MD_IAC_to_SC);
 
 		this.bindDevice(launchpadID, launchpadHandler);
 		this.bindDevice(footControllerID, footControllerHandler);
 		this.bindDevice(guitarID, guitarHandler);
+		this.bindDevice(launchpadDAWID, launchpadDAWHandler);
 
 		this.setupMIDIDef;
 		^this
@@ -131,6 +136,12 @@ LaunchpadHandler : MIDIInputHandler {
 // Alias for compatibility
 LaunchpadSource : LaunchpadHandler {}
 
+LaunchpadDAWHandler : MIDIInputHandler {
+	handleMessage { |channel, type, value|
+		"Launchpad: % % %".format(channel, type, value).postln;
+		// Future: dispatch to builder
+	}
+}
 //////////////////////////////////////////////////////
 // Foot Controller Handler
 // Previously: MDfootControllerPreprocessor
@@ -179,8 +190,17 @@ FootControllerSource : FootControllerHandler {}
 //////////////////////////////////////////////////////
 
 GuitarMIDIHandler : MIDIInputHandler {
-	handleMessage { |channel, type, value|
-		"MIDI Guitar: % % %".format(channel, type, value).postln;
+	handleMessage { |channel, type, pitch|
+		if (type === \noteOn)
+	{ var stringNum;
+	stringNum = 6 - channel; // Channels are 1-6, strings are 6 to 1
+		//"MIDI Guitar: % % %".format(channel, type, value).postln;
+
+		"String %: Pitch %".format(stringNum, pitch).postln;
+	}{
+			"Type was %, note \noteOn".format(type).postln;
+		}
+
 	}
 }
 

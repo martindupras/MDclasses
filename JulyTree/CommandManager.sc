@@ -27,7 +27,7 @@ CommandManager {
         states = [\idle, \inTree, \inQueue];
         currentState = \idle;
 
-        filePath = "~/Command Tree savefiles/myTree.json".standardizePath;
+        filePath = "~/CommandTreeSavefiles/myTree.json".standardizePath;
 
         this.createNewTree;
         this.createBuilder;
