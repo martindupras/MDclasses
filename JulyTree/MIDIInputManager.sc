@@ -1,6 +1,6 @@
 // MIDIInputManager.sc
 // Refactored from MDMIDISourceManager.sc
-// MD 20250814
+// MD 20250817
 
 // Main class to manage MIDI input devices and route messages to appropriate handlers
 MIDIInputManager {
@@ -133,13 +133,6 @@ MIDIInputManager {
 		"🔄 Tree navigation reset.".postln;
 	}
 
-/*	resetTreeNavigation {
-		currentMode = \idle;
-		builder.resetNavigation;
-		//manager.updateDisplay;      // update use display
-		"🔄 Tree navigation reset.".postln;
-	}*/
-
 	startTreeNavigation {
 		currentMode = \inTree;
 		commandManager.currentState = \inTree;
@@ -147,13 +140,6 @@ MIDIInputManager {
 		{commandManager.updateDisplay;}.defer;
 		"🌲 Tree navigation started.".postln;
 	}
-
-/*	startTreeNavigation {
-		currentMode = \treeNav;
-		builder.resetNavigation;
-		//manager.updateDisplay;      // update use display
-		"🌲 Tree navigation started.".postln;
-	}*/
 
 	addCurrentNodeToQueue {
 		var name = builder.getCurrentName;
@@ -291,9 +277,6 @@ FootControllerHandler {
 // Previously: MDMIDIGuitarPreprocessor
 //////////////////////////////////////////////////////
 
-
-
-
 GuitarMIDIHandler {
     var <>manager;
 
@@ -359,8 +342,6 @@ GuitarMIDIHandler {
         { manager.commandManager.updateDisplay; }.defer;
     }
 }
-
-
 
 // Alias
 //GuitarMIDISource : GuitarMIDIHandler {}
