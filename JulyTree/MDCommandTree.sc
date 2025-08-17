@@ -74,7 +74,7 @@ MDCommandTree {
         ^this;
     }
 
-    getNodeByName { |name|
+    findNodeByName { |name|
         var found;
         found = nodeMap.values.detect { |node| node.name == name };
         if (found.notNil) {
@@ -212,5 +212,19 @@ importJSONFile { |path|
     ("📥 Tree imported from " ++ path).postln;
     ^true;
 }
+
+	validateTree {
+    var seenNames = Set.new;
+    var valid = true;
+    nodeMap.values.do { |node|
+        if (seenNames.includes(node.name)) {
+            ("⚠️ Duplicate node name: " ++ node.name).postln;
+            valid = false;
+        };
+        seenNames.add(node.name);
+    };
+    ^valid;
+}
+
 
 }
