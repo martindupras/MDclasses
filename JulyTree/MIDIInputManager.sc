@@ -127,7 +127,7 @@ MIDIInputManager {
 
 	resetTreeNavigation {
 		currentMode = \idle;
-		commandManager.currentState = \idle;  // ← Add this line
+		commandManager.currentState = \idle;
 		builder.resetNavigation;
 		{commandManager.updateDisplay;}.defer;
 		"🔄 Tree navigation reset.".postln;
@@ -142,7 +142,7 @@ MIDIInputManager {
 
 	startTreeNavigation {
 		currentMode = \inTree;
-		commandManager.currentState = \inTree;  // ← Add this line
+		commandManager.currentState = \inTree;
 		builder.resetNavigation;
 		{commandManager.updateDisplay;}.defer;
 		"🌲 Tree navigation started.".postln;
@@ -157,6 +157,7 @@ MIDIInputManager {
 
 	addCurrentNodeToQueue {
 		var name = builder.getCurrentName;
+		commandManager.currentState = \inTree;
 		queue.enqueueCommand(name);
 		builder.resetNavigation;
 		//manager.updateDisplay;      // update use display
@@ -165,6 +166,7 @@ MIDIInputManager {
 
 	sendQueueAsOSC {
 		var path = queue.exportAsOSCPath;
+		commandManager.currentState = \inTree;
 		// You can send it via NetAddr if needed here
 		("📤 Sent queue as OSC: " ++ path).postln;
 	}
