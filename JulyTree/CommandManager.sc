@@ -90,24 +90,50 @@ CommandManager {
 		var stateText, choicesText, children;
 
 		// Show current state
+		stateText = "🧭 Mode: " ++ currentState.asString;
+		choicesText = "⚠️ No choices available.";
+
+		if (currentState == \prog) {
+			children = builder.currentNode.children;
+
+			if (builder.isAtLeaf) {
+				choicesText = choicesText ++ "\n🌿 Leaf node reached.";
+			};
+
+			if (children.notEmpty) {
+				children.do { |c|
+					("🧪 Child: " ++ c.name ++ ", payload: " ++ c.payload).postln;
+				};
+
+				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n\n" ++
+				"📦 Available Choices:\n" ++
+				children.collect { |c|
+					"• Fret " ++ c.fret ++ " → " ++ c.name ++ " (payload: " ++ c.payload ++ ")"
+				}.join("\n");
+			} {
+				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n⚠️ No available choices.";
+			};
+		} {
+			choicesText = "";
+		};
+
+		("🖥 Updating display...").postln;
+		("State text: " ++ stateText).postln;
+		("Choices text: " ++ choicesText).postln;
+
+		// Update individual display fields
+		{display.stateText.string = stateText;}.defer;
+		{display.userChoicesText.string = choicesText;}.defer;
+	}
+
+/*	updateDisplay {
+		var stateText, choicesText, children;
+
+		// Show current state
 
 		stateText = "🧭 Mode: " ++ currentState.asString;
 
 		choicesText = "⚠️ No choices available.";
-
-		// Show choices if we're in tree navigation mode
-/*		if (currentState == \inTree) {
-			children = builder.currentNode.children;
-			if (children.notEmpty) {
-				choicesText = "🎚 Choices:\n" ++ children.collect { |c|
-					"Fret " ++ c.fret ++ ": " ++ c.name
-				}.join("\n");
-			} {
-				choicesText = "⚠️ No choices available.";
-			};
-		} {
-			choicesText = "";
-		};*/
 
 		if (currentState == \prog) {
 			children = builder.currentNode.children;
@@ -137,7 +163,10 @@ CommandManager {
 		// Update individual display fields
 		{display.stateText.string = stateText;}.defer;
 		{display.userChoicesText.string = choicesText;}.defer;
-	}
+	}*/
+
+
+
 
 	setStatus { |text|
 		if (display.notNil) {

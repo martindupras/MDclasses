@@ -10,6 +10,8 @@ MIDIInputManager {
 	var <> commandManager;
 	var <> modes;
 	var <>waitingForString, <>navigationCallback;
+	var <>lastEnqueuedPayload;
+
 
 	// Legacy vars for debugging
 	var <>launchpadHandler, <>footControllerHandler, <>guitarHandler, <>launchpadDAWHandler;
@@ -99,25 +101,43 @@ MIDIInputManager {
 			},
 
 			//---
-			modes[\queue], {
-
-				var payload = builder.getCurrentPayload;
-				("🧩 Current payload to queue: " ++ payload).postln;
 
 
-				if (builder.isAtLeaf) {
-					commandManager.setStatus("🌿 Leaf node reached; payload: " ++ payload);
-				} {
-					commandManager.setStatus("📥 Queued non-leaf node: " ++ payload);
-				};
 
-				queue.enqueueCommand(payload);
-				("📦 Queue contents after enqueue: " ++ queue.commandList).postln;
-				builder.resetNavigation;
-				"📥 Added node to queue and restarted navigation.".postln;
-				this.setMode(modes[\prog]); // restart navigation
+modes[\queue], {
+    var queueText;
+    var payload = builder.getCurrentPayload;
 
-			},
+    if (payload != lastEnqueuedPayload) {
+        ("🧩 Current payload to queue: " ++ payload).postln;
+        queue.enqueueCommand(payload);
+        lastEnqueuedPayload = payload;
+
+        if (builder.isAtLeaf) {
+            commandManager.setStatus("🌿 Leaf node reached; payload: " ++ payload);
+        } {
+            commandManager.setStatus("📥 Queued node: " ++ payload);
+        };
+
+        queueText = queue.commandList.collect { |cmd| "- " ++ cmd.asString }.join("\n");
+        ("📋 Queue contents:\n" ++ queueText).postln;
+
+        {
+            commandManager.display.display(\state, "🧭 Mode: queue");
+            commandManager.display.display(\queue, "📋 Current Queue:\n" ++ queueText);
+            commandManager.display.display(\lastCommand, "🆕 Last Added: " ++ payload);
+        }.defer;
+    } {
+        ("⚠️ Duplicate payload ignored: " ++ payload).postln;
+        commandManager.setStatus("⚠️ Duplicate payload ignored");
+    };
+
+    builder.resetNavigation;
+    "📥 Added node to queue and restarted navigation.".postln;
+    this.setMode(modes[\prog]);
+}
+,
+
 			//---
 
 			modes[\send], {

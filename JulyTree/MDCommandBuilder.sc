@@ -13,7 +13,7 @@ MDCommandBuilder {
 		currentNode = tree.root;
 		navigationPath = List[0];
 		"🔧 CommandBuilder initialized".postln;
-		("📐 Depth: " ++ currentNode.depthTag).postln;
+		//("📐 Depth: " ++ currentNode.depthTag).postln;
 		^this
 	}
 

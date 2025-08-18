@@ -34,14 +34,12 @@ path = "/Users/martindupras/CommandTreeSavefiles/myTree.json";
 
 ///// STEP 3 - ADD NODES
 (
-// Add a node to the tree
-var parentId, nodeName, fret, newNode;
+// Add a node
+var parentId = 8;
+var nodeName = "bob";
+var fret = 11;
+var newNode = ~tree.addNode(parentId, nodeName, fret);
 
-parentId = 19; // ← Replace with actual parent node ID
-nodeName = "audio"; // ← Replace with desired name
-fret = 7; // ← Replace with desired fret value
-
-newNode = ~tree.addNode(parentId, nodeName, fret);
 if (newNode.notNil) {
     ("✅ Added node '" ++ nodeName ++ "' under parent ID " ++ parentId).postln;
     ~tree.printTreePretty;
@@ -49,6 +47,22 @@ if (newNode.notNil) {
     "⚠️ Failed to add node.".postln;
 };
 )
+
+(
+// Remove the node
+var nodeIdToRemove = 24;
+var removed = ~tree.removeNode(nodeIdToRemove);
+
+if (removed.notNil) {
+    ("🗑 Node " ++ nodeIdToRemove ++ " removed.").postln;
+} {
+    ("⚠️ Failed to remove node " ++ nodeIdToRemove).postln;
+};
+
+// Always reprint after mutation
+~tree.printTreePretty;
+)
+
 
 (
 // Save tree to JSON file
@@ -62,8 +76,27 @@ savePath.postln;
 
 
 
-MDCommandNode.printTreePretty.sourceCode.postln;
-~tree.printTreePretty;
+
+// TEST save and reload
+(
+// Save and reload test
+var savePath, reloadedTree;
+
+savePath = "/Users/martindupras/CommandTreeSavefiles/testTree.json";
+
+// Save current tree
+~tree.exportJSONFile(savePath);
+"💾 Tree saved.".postln;
+
+// Reload into a new tree instance
+reloadedTree = MDCommandTree.new;
+if (reloadedTree.importJSONFile(savePath)) {
+    "✅ Tree reloaded successfully.".postln;
+    reloadedTree.printTreePretty;
+} {
+    "❌ Failed to reload tree.".postln;
+};
+)
 
 
 
