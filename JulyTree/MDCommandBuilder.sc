@@ -1,6 +1,6 @@
 // MDCommandBuilder.sc
-// Refactored for clarity and consistency
-// MD 20250813
+
+// MD 20250818
 
 MDCommandBuilder {
 	var <>tree, <>currentNode, <>currentCommand, <>navigationPath;
@@ -68,9 +68,14 @@ MDCommandBuilder {
 		^currentNode.name
 	}
 
+	getCurrentPayload {
+		("📦 Current payload: " ++ currentNode.payload).postln;
+		//currentNode.payload.postln;
+		^currentNode.payload
+	}
 	isAtLeaf {
-    ^currentNode.children.isEmpty;
-}
+		^currentNode.children.isEmpty;
+	}
 
 	resetNavigation {
 		currentNode = tree.root;

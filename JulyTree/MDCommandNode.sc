@@ -4,7 +4,8 @@
 
 MDCommandNode {
 	var <>name, <>id, <>fret, <>parent, <>children;
-	var <>depthTag;
+	var <> payload; // the "command" that will be inserted in the tree
+	//var <>depthTag;
 
 	*new { |name = "default", id = 1, fret = 1, parent = nil|
 		^super.new.init(name, id, fret, parent);
@@ -118,10 +119,10 @@ MDCommandNode {
 		^this.parent.notNil.if({ this.parent.getDepth + 1 }, { 0 })
 	}
 
-	tagByDepth { |depth|
+/*	tagByDepth { |depth|
 		this.depthTag = depth;
 		this.children.do { |c| c.tagByDepth(depth + 1) };
-	}
+	}*/
 
 	// ───── Tree Analysis ─────
 
@@ -170,51 +171,33 @@ MDCommandNode {
 
 
 	// ───── Tree Display ─────
-
 	printTreePretty { |level = 0, isLast = true, prefix = ""|
-		var branch, line, childPrefix;
+		var sortedChildren, connector, newPrefix;
 
-		branch = if (level > 0) {
-			if (isLast) { "└── " } { "├── " };
-		} { "" };
-
-		line = prefix ++ branch ++ this.name ++ " (ID: " ++ this.id ++ ", Fret: " ++ this.fret ++ ")";
-		line.postln;
+		// Print current node
+		connector = if (level == 0) { "" } { if (isLast) { "└── " } { "├── " } };
+		(prefix ++ connector ++ this.name ++ " (fret: " ++ this.fret ++ ", id: " ++ this.id ++ ")").postln;
 
 		// Prepare prefix for children
-		childPrefix = prefix ++ (level > 0).if({
-			isLast.if({ "    " }, { "│   " });
-		}, { "" });
+		newPrefix = if (level == 0) { "" } {
+			prefix ++ if (isLast) { "    " } { "│   " }
+		};
 
-		this.children.do { |child, i|
-			child.printTreePretty(level + 1, i == (this.children.size - 1), childPrefix);
+		// Filter and sort children
+		sortedChildren = this.children.asArray.select { |child|
+			child.isKindOf(MDCommandNode) or: {
+				("❌ Unexpected child type: " ++ child.class).warn;
+				false
+			}
+		}.sort { |a, b| a.fret < b.fret };
+
+		// Recursively print children
+		sortedChildren.do { |child, i|
+			var last = (i == (sortedChildren.size - 1));
+			child.printTreePretty(level + 1, last, newPrefix);
 		};
 	}
 
-/*
-//OLDER VERSION
-    printTreePretty { |level = 0, isLast = true|
-        var indent, branch, line;
-
-        indent = Array.fill(level, { |i|
-            if (i == (level - 1)) {
-                if (isLast) { "    " } { "│   " };
-            } {
-                "    ";
-            }
-        }).join("");
-
-        branch = if (level > 0) {
-            if (isLast) { "└── " } { "├── " };
-        } { "" };
-
-        line = indent ++ branch ++ this.name ++ " (ID: " ++ this.id ++ ", Fret: " ++ this.fret ++ ")";
-        line.postln;
-
-        this.children.do { |child, i|
-            child.printTreePretty(level + 1, i == (this.children.size - 1));
-        }
-    }*/
 
 	// ───── Serialization ─────
 

@@ -1,230 +1,252 @@
 MDCommandTree {
-    var <>root, <>nodeLimit = 200, <>nodeCount = 0, <>nodeMap;
+	var <>root, <>nodeLimit = 200, <>nodeCount = 0, <>nodeMap;
 
-    *new { |rootName = "root", rootId = 0, nodeLimit|
-        ^super.new.init(rootName, rootId, nodeLimit);
-    }
+	*new { |rootName = "root", rootId = 0, nodeLimit|
+		^super.new.init(rootName, rootId, nodeLimit);
+	}
 
 
 	*fromDict { |dict|
-    var tree;
+		var tree;
 
-    // Use a default node limit, or extract from dict if available
-    tree = MDCommandTree.new(dict[\name], dict[\id], dict[\nodeLimit] ?? 200);
+		// Use a default node limit, or extract from dict if available
+		tree = MDCommandTree.new(dict[\name], dict[\id], dict[\nodeLimit] ?? 200);
 
-    if (dict[\children].isKindOf(Array)) {
-        dict[\children].do { |childDict|
-            tree.rebuildTreeFromDict(childDict, tree.root);
-        };
-    };
+		if (dict[\children].isKindOf(Array)) {
+			dict[\children].do { |childDict|
+				tree.rebuildTreeFromDict(childDict, tree.root);
+			};
+		};
+		tree.root.payload = dict[\payload];
 
-    ^tree;
-}
+		^tree;
+	}
 
-/*    *fromDict { |dict|
-        var tree;
 
-        tree = MDCommandTree.new(dict[\name], dict[\id], dict[\fret]);
+	init { |rootName, rootId, limit|
+		root = MDCommandNode.new(rootName, rootId);
+		nodeLimit = limit;
+		nodeCount = 1;
 
-        if (dict[\children].isKindOf(Array)) {
-            dict[\children].do { |childDict|
-                tree.rebuildTreeFromDict(childDict, tree.root);
-            };
-        };
+		nodeMap = IdentityDictionary.new(100);
+		nodeMap.put(rootId, root);
 
-        ^tree;
-    }*/
+		^this
+	}
 
-    init { |rootName, rootId, limit|
-        root = MDCommandNode.new(rootName, rootId);
-        nodeLimit = limit;
-        nodeCount = 1;
+	rebuildTreeFromDict { |dict, parent|
+		var node;
 
-        nodeMap = IdentityDictionary.new(100);
-        nodeMap.put(rootId, root);
+		node = MDCommandNode.new(dict[\name], dict[\id], dict[\fret]);
+		parent.addChild(node);
 
-        ^this
-    }
+		nodeMap.put(node.id, node);
+		nodeCount = node.id.max(nodeCount);
 
-    rebuildTreeFromDict { |dict, parent|
-        var node;
+		if (dict[\children].isKindOf(Array)) {
+			dict[\children].do { |childDict|
+				this.rebuildTreeFromDict(childDict, node);
+			};
+		};
 
-        node = MDCommandNode.new(dict[\name], dict[\id], dict[\fret]);
-        parent.addChild(node);
+		node.payload = dict[\payload];
 
-        nodeMap.put(node.id, node);
-        nodeCount = node.id.max(nodeCount);
+		^node;
+	}
 
-        if (dict[\children].isKindOf(Array)) {
-            dict[\children].do { |childDict|
-                this.rebuildTreeFromDict(childDict, node);
-            };
-        };
+	printTreePretty {
+		root.printTreePretty;
+		^this;
+	}
 
-        ^node;
-    }
+	tagDepths {
+		root.tagByDepth(0);
+		^this;
+	}
 
-    printTreePretty {
-        root.printTreePretty;
-        ^this;
-    }
+	findNodeByName { |name|
+		var found;
+		found = nodeMap.values.detect { |node| node.name == name };
+		if (found.notNil) {
+			("🔍 Found node '" ++ found.name ++ "' at ID " ++ found.id).postln;
+			^found
+		} {
+			"⚠️ Node not found".postln;
+			^nil
+		}
+	}
 
-    tagDepths {
-        root.tagByDepth(0);
-        ^this;
-    }
+	getNodeByNamePath { |nameList|
+		var found;
+		found = root.getNodeByNamePath(nameList);
+		if (found.notNil) {
+			^found
+		} {
+			("⚠️ Node not found at path: " ++ nameList.join(" → ")).postln;
+			^nil
+		}
+	}
 
-    findNodeByName { |name|
-        var found;
-        found = nodeMap.values.detect { |node| node.name == name };
-        if (found.notNil) {
-            ("🔍 Found node '" ++ found.name ++ "' at ID " ++ found.id).postln;
-            ^found
-        } {
-            "⚠️ Node not found".postln;
-            ^nil
-        }
-    }
+	addNode { |parentId, name, fret|
+		var newId, parentNode, newNode;
 
-    getNodeByNamePath { |nameList|
-        var found;
-        found = root.getNodeByNamePath(nameList);
-        if (found.notNil) {
-            ^found
-        } {
-            ("⚠️ Node not found at path: " ++ nameList.join(" → ")).postln;
-            ^nil
-        }
-    }
+		newId = nodeCount + 1;
+		parentNode = nodeMap.at(parentId);
 
-    addNode { |parentId, name, fret|
-        var newId, parentNode, newNode;
+		if (parentNode.notNil) {
+			nodeCount = newId;
+			newNode = MDCommandNode.new(name, newId, fret);
+			newNode.parent = parentNode;
+			parentNode.addChild(newNode);
+			nodeMap.put(newId, newNode);
+			^newNode
+		} {
+			("⚠️ Invalid parent ID: " ++ parentId).postln;
+			^nil
+		}
+	}
 
-        newId = nodeCount + 1;
-        parentNode = nodeMap.at(parentId);
+	removeNode { |nodeId|
+		var nodeToRemove, parentNode, found;
 
-        if (parentNode.notNil) {
-            nodeCount = newId;
-            newNode = MDCommandNode.new(name, newId, fret);
-            newNode.parent = parentNode;
-            parentNode.addChild(newNode);
-            nodeMap.put(newId, newNode);
-            ^newNode
-        } {
-            ("⚠️ Invalid parent ID: " ++ parentId).postln;
-            ^nil
-        }
-    }
+		nodeToRemove = nodeMap.at(nodeId);
+		parentNode = nodeToRemove.parent;
 
-    removeNode { |nodeId|
-        var nodeToRemove, parentNode, found;
+		if (parentNode.notNil) {
+			found = parentNode.children.detect { |c| c === nodeToRemove };
+			if (found.notNil) {
+				parentNode.removeChildById(found.id);
+				nodeMap.removeAt(nodeId);
+				("🗑 Node " ++ nodeId ++ " removed.").postln;
+				^nodeToRemove
+			} {
+				"⚠️ Node not found in parent's children".postln;
+				^nil
+			}
+		} {
+			"⚠️ Cannot remove root node".postln;
+			^nil
+		}
+	}
 
-        nodeToRemove = nodeMap.at(nodeId);
-        parentNode = nodeToRemove.parent;
+	swapNodes { |nodeId1, nodeId2|
+		var node1, node2, parent1, parent2;
 
-        if (parentNode.notNil) {
-            found = parentNode.children.detect { |c| c === nodeToRemove };
-            if (found.notNil) {
-                parentNode.removeChildById(found.id);
-                nodeMap.removeAt(nodeId);
-                ("🗑 Node " ++ nodeId ++ " removed.").postln;
-                ^nodeToRemove
-            } {
-                "⚠️ Node not found in parent's children".postln;
-                ^nil
-            }
-        } {
-            "⚠️ Cannot remove root node".postln;
-            ^nil
-        }
-    }
+		node1 = nodeMap.at(nodeId1);
+		node2 = nodeMap.at(nodeId2);
+		parent1 = node1.parent;
+		parent2 = node2.parent;
 
-    swapNodes { |nodeId1, nodeId2|
-        var node1, node2, parent1, parent2;
+		if (parent1.isNil or: { parent2.isNil }) {
+			"⚠️ Both nodes must have parents to swap".postln;
+			^nil
+		};
 
-        node1 = nodeMap.at(nodeId1);
-        node2 = nodeMap.at(nodeId2);
-        parent1 = node1.parent;
-        parent2 = node2.parent;
+		node1 = removeNode(nodeId1);
+		node2 = removeNode(nodeId2);
 
-        if (parent1.isNil or: { parent2.isNil }) {
-            "⚠️ Both nodes must have parents to swap".postln;
-            ^nil
-        };
+		if (node1.isNil or: { node2.isNil }) {
+			"⚠️ Failed to remove nodes for swapping".postln;
+			^nil
+		};
 
-        node1 = removeNode(nodeId1);
-        node2 = removeNode(nodeId2);
+		parent1.addChild(node2);
+		parent2.addChild(node1);
 
-        if (node1.isNil or: { node2.isNil }) {
-            "⚠️ Failed to remove nodes for swapping".postln;
-            ^nil
-        };
+		"🔄 Nodes swapped".postln;
+		^nil
+	}
 
-        parent1.addChild(node2);
-        parent2.addChild(node1);
+	exportJSONFile { |path|
+		var jsonString, file;
 
-        "🔄 Nodes swapped".postln;
-        ^nil
-    }
+		jsonString = JSONlib.convertToJSON(root.asDictRecursively);
+		file = File(path, "w");
 
-    exportJSONFile { |path|
-        var jsonString, file;
+		if (file.isOpen) {
+			file.write(jsonString);
+			file.close;
+			("📤 Tree exported to " ++ path).postln;
+		} {
+			"⚠️ Failed to open file for writing.".warn;
+		}
+	}
 
-        jsonString = JSONlib.convertToJSON(root.asDictRecursively);
-        file = File(path, "w");
+	importJSONFile { |path|
+		var jsonString, dict, newTree;
 
-        if (file.isOpen) {
-            file.write(jsonString);
-            file.close;
-            ("📤 Tree exported to " ++ path).postln;
-        } {
-            "⚠️ Failed to open file for writing.".warn;
-        }
-    }
+		if (File.exists(path).not) {
+			"❌ File does not exist: %".format(path).postln;
+			^false;
+		};
 
-importJSONFile { |path|
-    var jsonString, dict, newTree;
+		jsonString = File(path, "r").readAllString;
 
-    if (File.exists(path).not) {
-        "❌ File does not exist: %".format(path).postln;
-        ^false;
-    };
+		if (jsonString.isNil or: { jsonString.isEmpty }) {
+			"⚠️ File is empty or unreadable.".postln;
+			^false;
+		};
 
-    jsonString = File(path, "r").readAllString;
+		dict = JSONlib.convertToSC(jsonString);
 
-    if (jsonString.isNil or: { jsonString.isEmpty }) {
-        "⚠️ File is empty or unreadable.".postln;
-        ^false;
-    };
+		if (dict.isNil) {
+			"⚠️ Failed to parse JSON.".postln;
+			^false;
+		};
 
-    dict = JSONlib.convertToSC(jsonString);
+		newTree = MDCommandTree.fromDict(dict);
+		this.root = newTree.root;
+		this.nodeMap = newTree.nodeMap;
+		this.nodeCount = newTree.nodeCount;
 
-    if (dict.isNil) {
-        "⚠️ Failed to parse JSON.".postln;
-        ^false;
-    };
-
-    newTree = MDCommandTree.fromDict(dict);
-    this.root = newTree.root;
-    this.nodeMap = newTree.nodeMap;
-    this.nodeCount = newTree.nodeCount;
-
-    ("📥 Tree imported from " ++ path).postln;
-    ^true;
-}
+		("📥 Tree imported from " ++ path).postln;
+		^true;
+	}
 
 	validateTree {
-    var seenNames = Set.new;
-    var valid = true;
-    nodeMap.values.do { |node|
-        if (seenNames.includes(node.name)) {
-            ("⚠️ Duplicate node name: " ++ node.name).postln;
-            valid = false;
-        };
-        seenNames.add(node.name);
-    };
-    ^valid;
-}
+		var seenNames = Set.new;
+		var valid = true;
+		nodeMap.values.do { |node|
+			if (seenNames.includes(node.name)) {
+				("⚠️ Duplicate node name: " ++ node.name).postln;
+				valid = false;
+			};
+			seenNames.add(node.name);
+		};
+		^valid;
+	}
+
+
+	// THIS IS NEW. This is so that (for now) we can copy the name of the node into the payload instance variable.
+	assignPayloads {
+		var assignRecursively;
+
+		assignRecursively = { |node|
+			node.payload = node.name;
+			node.children.do { |child|
+				assignRecursively.(child);
+			};
+		};
+
+		assignRecursively.(this.root);
+		"🧠 Payloads assigned to all nodes in tree.".postln;
+		^this;
+	}
+
+	printPayloads {
+		var printRecursively;
+
+		printRecursively = { |node, level = 0|
+			var indent = "  " ! level;
+			(indent.join ++ node.name ++ " → Payload: " ++ node.payload).postln;
+			node.children.do { |child|
+				printRecursively.(child, level + 1);
+			};
+		};
+
+		printRecursively.(this.root);
+		^this;
+	}
 
 
 }
