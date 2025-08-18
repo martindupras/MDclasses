@@ -10,7 +10,7 @@ UserDisplay {
 	var <>queueText;
 	var <>lastCommandText;
 	var <>userChoicesText;
-
+	var <>statusText;
 	//var window, stateText, queueText , lastCommandText, userChoicesText;
 
 	*new{
@@ -28,14 +28,17 @@ UserDisplay {
 		queueText = StaticText(window).string_("queueText");
 		lastCommandText = StaticText(window).string_("lastCommandText");
 		userChoicesText = StaticText(window).string_("userChoicesText");
+		statusText = StaticText(window).string_(""); // choose appropriate position and size
+
 
 		// add layouts to the window
 		window.layout =
-		HLayout(
+		VLayout(
 			stateText,
 			queueText,
 			lastCommandText,
-			userChoicesText
+			userChoicesText,
+			statusText
 		);
 
 		// bring window to front:
@@ -55,5 +58,11 @@ UserDisplay {
 		postln("box:" + box);
 		postln("msg:" + msg);
 	}
+
+	updateStatus { |text|
+    ("🖥 Status update: " ++ text).postln;
+    { this.statusText.string = text; }.defer; // assuming you have a GUI element called statusText
+}
+
 
 } //end of class

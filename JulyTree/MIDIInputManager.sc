@@ -1,5 +1,4 @@
 // MIDIInputManager.sc
-
 // MD 20250817-1926
 
 MIDIInputManager {
@@ -99,16 +98,32 @@ MIDIInputManager {
 				"🌲 Tree navigation started.".postln;
 			},
 
-
+			//---
 			modes[\queue], {
+
 				var name = builder.getCurrentName;
+				("🧩 Current node name to queue: " ++ name).postln;
+
+
+				if (builder.isAtLeaf) {
+					commandManager.setStatus("🌿 Leaf node reached: " ++ name);
+				} {
+					commandManager.setStatus("📥 Queued non-leaf node: " ++ name);
+				};
+
 				queue.enqueueCommand(name);
+				("📦 Queue contents after enqueue: " ++ queue.commandList).postln;
 				builder.resetNavigation;
 				"📥 Added node to queue and restarted navigation.".postln;
 				this.setMode(modes[\prog]); // restart navigation
+
 			},
+			//---
+
 			modes[\send], {
 				var path = queue.exportAsOSCPath;
+				("📋 Queue contents before export: " ++ queue.commandList).postln;
+
 				("📤 Sent queue as OSC: " ++ path).postln;
 				queue.clear;
 			},
@@ -128,6 +143,7 @@ MIDIInputManager {
 	}
 	startNavigationFromString { |stringNum|
 		if (stringNum < 1) {
+			builder.navigationComplete = true;
 			"✅ Navigation complete.".postln;
 			^this;
 		};
@@ -143,7 +159,6 @@ MIDIInputManager {
 		navigationCallback = callback;
 		("🎧 Waiting for note on string " ++ stringNum).postln;
 	}
-
 
 	scanDevices {
 		MIDIClient.sources.do { |src|
@@ -178,7 +193,7 @@ MIDIInputManager {
 		if (keyOrID.isKindOf(Symbol)) {
 			srcID = this.getSrcID(keyOrID);
 			symbol = keyOrID;
-		} {
+		}{
 			srcID = keyOrID;
 			symbol = deviceUIDs.keys.detect { |k| deviceUIDs[k] == srcID };
 		};
@@ -209,38 +224,6 @@ MIDIInputManager {
 			}
 		});
 	}
-
-/*	resetTreeNavigation {
-		currentMode = \idle;
-		commandManager.currentState = \idle;
-		builder.resetNavigation;
-		{commandManager.updateDisplay;}.defer;
-		"🔄 Tree navigation reset.".postln;
-	}*/
-
-/*	startTreeNavigation {
-		currentMode = \inTree;
-		commandManager.currentState = \inTree;
-		builder.resetNavigation;
-		{commandManager.updateDisplay;}.defer;
-		"🌲 Tree navigation started.".postln;
-	}*/
-
-/*	addCurrentNodeToQueue {
-		var name = builder.getCurrentName;
-		commandManager.currentState = \inTree;
-		queue.enqueueCommand(name);
-		builder.resetNavigation;
-		//manager.updateDisplay;      // update use display
-		"📥 Added node to queue and restarted navigation.".postln;
-	}*/
-/*
-	sendQueueAsOSC {
-		var path = queue.exportAsOSCPath;
-		commandManager.currentState = \inTree;
-		// You can send it via NetAddr if needed here
-		("📤 Sent queue as OSC: " ++ path).postln;
-	}*/
 
 } // end of MIDIInputManager class
 
@@ -306,12 +289,6 @@ FootControllerHandler {
 		^this
 	}
 
-/*	doActionAndUpdate { |actionFunc|
-		actionFunc.value;
-		{ manager.commandManager.updateDisplay; }.defer;
-	}*/
-
-
 	handleMessage { |channel, type, value|
 		("🧪 manager class is: " ++ manager.class).postln;
 
@@ -325,7 +302,6 @@ FootControllerHandler {
 				{ ("⚠️ No action for note: " ++ value).postln }
 			);
 		}
-
 	}
 }
 
@@ -395,57 +371,4 @@ GuitarMIDIHandler {
 
 		{ manager.commandManager.updateDisplay; }.defer;
 	}
-
-
-
-/*	handleMessage { |channel, type, pitch|
-		// ✅ Confirm method is being called
-		("📥 handleMessage called with channel: " ++ channel ++ ", type: " ++ type ++ ", pitch: " ++ pitch).postln;
-
-		// ✅ Check type
-		if (type === \noteOn) {
-			"✅ type is noteOn".postln;
-		} {
-			"❌ type is not noteOn".postln;
-		};
-
-		// ✅ Check current mode
-		if (manager.currentMode == manager.modes[\prog])
-		{
-			"✅ currentMode is treeNav".postln;
-		} {
-			("❌ currentMode is: " ++ manager.currentMode).postln;
-		};
-
-		// ✅ Proceed only if both conditions are met
-		if (type === \noteOn and: { manager.currentMode == \inTree }) {
-			var stringBasePitches = (
-				0: 40, // E string (6th)
-				1: 45, // A
-				2: 50, // D
-				3: 55, // G
-				4: 59, // B
-				5: 64  // E (1st)
-			);
-
-			var basePitch = stringBasePitches[channel];
-			if (basePitch.notNil) {
-				var fret = pitch - basePitch;
-				var stringNumber = 6 - channel;
-
-				// ✅ Debug conversion
-				("🎸 Received MIDI note: " ++ pitch ++
-					" on channel: " ++ channel ++
-					" → string: " ++ stringNumber ++
-					", base pitch: " ++ basePitch ++
-					", calculated fret: " ++ fret).postln;
-
-				manager.builder.navigateByFret(stringNumber, fret);
-			} {
-				("⚠️ Unrecognized channel: " ++ channel ++ ". No base pitch defined.").postln;
-			}
-		};
-
-		{ manager.commandManager.updateDisplay; }.defer;
-	}*/
 }

@@ -111,6 +111,11 @@ CommandManager {
 
 		if (currentState == \prog) {
 			children = builder.currentNode.children;
+			if (builder.isAtLeaf) {
+				choicesText = choicesText ++ "\n🌿 Leaf node reached.";
+			};
+
+
 			if (children.notEmpty) {
 				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n\n" ++
 				"📦 Available Choices:\n" ++
@@ -134,6 +139,13 @@ CommandManager {
 		{display.userChoicesText.string = choicesText;}.defer;
 	}
 
+	setStatus { |text|
+		if (display.notNil) {
+			display.updateStatus(text);
+		} {
+			("⚠️ Display not available. Status: " ++ text).postln;
+		}
+	}
 
 }
 
