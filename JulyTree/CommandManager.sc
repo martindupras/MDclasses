@@ -1,40 +1,40 @@
 // CommandManager.sc
 // Refactored from MDCommandMC.sc
-// MD 20250813
+// MD 20250817-1927
 
 //previously known as MDCommandMC
 CommandManager {
-    var something, octave, pitchclass, gString;
-    var <> currentState; // getter and setters for outside
-    var states;
-    var <>tree;
-    var <>builder;
-    var <>queue;
-    var <>display, <>displayText;
-    var filePath;
-    var <>midiManager;
+	var something, octave, pitchclass, gString;
+	var <> currentState; // getter and setters for outside
+	var states;
+	var <>tree;
+	var <>builder;
+	var <>queue;
+	var <>display, <>displayText;
+	var filePath;
+	var <>midiManager;
 	var <>commandManager;
 
 
-    var launchpadHandler, footControllerHandler, guitarHandler;
-    var <>launchpadID, <>footControllerID, <>guitarID;
+	var launchpadHandler, footControllerHandler, guitarHandler;
+	var <>launchpadID, <>footControllerID, <>guitarID;
 
-    *new {
-        ^super.new.init;
-    }
+	*new {
+		^super.new.init;
+	}
 
-    init {
-        if (true) { "CommandManager created".postln };
+	init {
+		if (true) { "CommandManager created".postln };
 
-        states = [\idle, \inTree, \inQueue];
-        currentState = \idle;
+		// states = [\idle, \inTree, \inQueue];
+		currentState = \idle;
 
-        filePath = "~/CommandTreeSavefiles/myTree.json".standardizePath;
+		filePath = "~/CommandTreeSavefiles/myTree.json".standardizePath;
 
-        this.createNewTree;
-        this.createBuilder;
-        this.createCommandQueue;
-        display = UserDisplay.new;
+		this.createNewTree;
+		this.createBuilder;
+		this.createCommandQueue;
+		display = UserDisplay.new;
 
 		midiManager = MIDIInputManager.new(builder, nil, nil, nil);
 		midiManager.commandManager = this;
@@ -46,55 +46,57 @@ CommandManager {
 
         midiManager = MIDIInputManager.new(builder, launchpadHandler, footControllerHandler, guitarHandler);*/
 
-        ^this
-    }
+		^this
+	}
 
 
-    createNewTree {
-        tree = MDCommandTree.new("root");
-        tree.importJSONFile(filePath);
-        if (tree.notNil) {
-            "🔮 Tree created".postln;
-            if (true) { tree.printTreePretty };
-        } {
-            "🔮 Couldn't create tree".postln;
-        }
-    }
+	createNewTree {
+		tree = MDCommandTree.new("root");
+		tree.importJSONFile(filePath);
+		if (tree.notNil) {
+			"🔮 Tree created".postln;
+			if (true) { tree.printTreePretty };
+		} {
+			"🔮 Couldn't create tree".postln;
+		}
+	}
 
-    createBuilder {
-        builder = MDCommandBuilder.new(tree);
-        if (builder.notNil) {
-            "🔮 Builder created".postln;
-        } {
-            "🔮 Couldn't create builder".postln;
-        }
-    }
+	createBuilder {
+		builder = MDCommandBuilder.new(tree);
+		if (builder.notNil) {
+			"🔮 Builder created".postln;
+		} {
+			"🔮 Couldn't create builder".postln;
+		}
+	}
 
-    createCommandQueue {
-        queue = MDCommandQueue.new;
-        if (queue.notNil) {
-            "🔮 Queue created".postln;
-        } {
-            "🔮 Couldn't create queue".postln;
-        }
-    }
+	createCommandQueue {
+		queue = MDCommandQueue.new;
+		if (queue.notNil) {
+			"🔮 Queue created".postln;
+		} {
+			"🔮 Couldn't create queue".postln;
+		}
+	}
 
-    print { |vel, num, chan|
-        ("vel: " + vel).postln;
-        ("num: " + num).postln;
-        ("chan: " + chan).postln;
-        ^this
-    }
+	print { |vel, num, chan|
+		("vel: " + vel).postln;
+		("num: " + num).postln;
+		("chan: " + chan).postln;
+		^this
+	}
 
 	updateDisplay {
 		var stateText, choicesText, children;
 
 		// Show current state
-		stateText = "🧭 State: " ++ currentState.asString;
+
+		stateText = "🧭 Mode: " ++ currentState.asString;
+
 		choicesText = "⚠️ No choices available.";
 
 		// Show choices if we're in tree navigation mode
-		if (currentState == \inTree) {
+/*		if (currentState == \inTree) {
 			children = builder.currentNode.children;
 			if (children.notEmpty) {
 				choicesText = "🎚 Choices:\n" ++ children.collect { |c|
@@ -105,12 +107,27 @@ CommandManager {
 			};
 		} {
 			choicesText = "";
+		};*/
+
+		if (currentState == \prog) {
+			children = builder.currentNode.children;
+			if (children.notEmpty) {
+				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n\n" ++
+				"📦 Available Choices:\n" ++
+				children.collect { |c|
+					"• Fret " ++ c.fret ++ " → " ++ c.name
+				}.join("\n");
+			} {
+				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n⚠️ No available choices.";
+			};
+		} {
+			choicesText = "";
 		};
 
 
-("🖥 Updating display...").postln;
-    ("State text: " ++ stateText).postln;
-    ("Choices text: " ++ choicesText).postln;
+		("🖥 Updating display...").postln;
+		("State text: " ++ stateText).postln;
+		("Choices text: " ++ choicesText).postln;
 
 		// Update individual display fields
 		{display.stateText.string = stateText;}.defer;
