@@ -3,7 +3,7 @@
 // MD 20250818
 
 MDCommandBuilder {
-	var <>tree, <>currentNode, <>currentCommand, <>navigationPath;
+	var <>tree, <>currentNode, <>currentCommand, <>fretPath;
 	var <>navigationComplete = false;
 
 	*new { |argTree| ^super.new.init(argTree); }
@@ -11,9 +11,8 @@ MDCommandBuilder {
 	init { |argTree|
 		tree = argTree;
 		currentNode = tree.root;
-		navigationPath = List[0];
-		"🔧 CommandBuilder initialized".postln;
-		//("📐 Depth: " ++ currentNode.depthTag).postln;
+		fretPath = List[0];
+		"CommandBuilder initialized".postln;
 		^this
 	}
 
@@ -33,11 +32,11 @@ MDCommandBuilder {
 	navigateByFret { |stringLevel, fretNumber|
 		var nextNode;
 		("🎸 Navigating by fret: " ++ fretNumber).postln;
-		nextNode = currentNode.getChildByFret(fretNumber);  // ✅ correct method name
+		nextNode = currentNode.getChildByFret(fretNumber);
 		if (nextNode.notNil) {
 			currentNode = nextNode;
-			navigationPath.add(currentNode.fret);
-			("🎯 Current node: " ++ currentNode.name).postln;
+			fretPath.add(currentNode.fret);
+			("Current node: " ++ currentNode.name).postln;
 		} {
 			("⚠️ No child found for fret: " ++ fretNumber).postln;
 		};
@@ -49,9 +48,9 @@ MDCommandBuilder {
 		var nextNode = currentNode.getChildByName(childName);
 		if (nextNode.notNil) {
 			currentNode = nextNode;
-			navigationPath.add(currentNode.fret);
-			("🎯 Current node: " ++ currentNode.name).postln;
-			("📍 Path: " ++ currentNode.getFullPathString).postln;
+			fretPath.add(currentNode.fret);
+			("Current node: " ++ currentNode.name).postln;
+			("Path: " ++ currentNode.getFullPathString).postln;
 		} {
 			("⚠️ Available children: " ++ currentNode.children.collect(_.name).join(", ")).postln;
 		};
@@ -69,7 +68,7 @@ MDCommandBuilder {
 	}
 
 	getCurrentPayload {
-		("📦 Current payload: " ++ currentNode.payload).postln;
+		("Current payload: " ++ currentNode.payload).postln;
 		//currentNode.payload.postln;
 		^currentNode.payload
 	}
@@ -79,14 +78,14 @@ MDCommandBuilder {
 
 	resetNavigation {
 		currentNode = tree.root;
-		navigationPath = List[0];
+		fretPath = List[0];
 		navigationComplete = false;  // important; reset the flag!
 		"🔄 Navigation reset".postln;
 		^this
 	}
 
-	printNavigationPath {
-		("🧭 Fret path: " ++ navigationPath).postln;
+	printfretPath {
+		("Fret path: " ++ fretPath).postln;
 		^this
 	}
 

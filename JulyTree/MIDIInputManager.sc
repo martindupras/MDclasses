@@ -7,7 +7,7 @@ MIDIInputManager {
 
 	var <> currentMode = \idle; // will store the mode that the foot controller has put us in
 	var <> builder, <>queue;
-	var <> commandManager;
+	var <> parentCommandManager;
 	var <> modes;
 	var <>waitingForString, <>navigationCallback;
 	var <>lastEnqueuedPayload;
@@ -22,7 +22,7 @@ MIDIInputManager {
 	}
 
 	init { |argBuilder, argLaunchpad, argFootController, argGuitarMIDI, argLaunchpadDAW|
-		// is builder passed to anything ever?
+
 		this.modes = IdentityDictionary[
 			\idle -> \idle,
 			\prog -> \prog,
@@ -40,7 +40,7 @@ MIDIInputManager {
 		this.launchpadHandler = argLaunchpad ?? LaunchpadHandler.new;
 		this.footControllerHandler = argFootController ?? FootControllerHandler.new(this);
 		//DEBUG:
-		("🧪 footControllerHandler manager is: " ++ footControllerHandler.manager).postln;
+		("footControllerHandler manager is: " ++ footControllerHandler.inputManager).postln;
 
 		this.guitarHandler = argGuitarMIDI ?? GuitarMIDIHandler.new(this);
 		this.launchpadDAWHandler = argLaunchpadDAW ?? LaunchpadDAWHandler.new;
@@ -53,10 +53,10 @@ MIDIInputManager {
 
 		this.scanDevices;
 
-		launchpadID = this.getSrcID(\Launchpad_Mini_MK3_LPMiniMK3_MIDI_Out);
-		launchpadDAWID  = this.getSrcID(\Launchpad_Mini_MK3_LPMiniMK3_DAW_Out); // so that we can filter it out
-		footControllerID = this.getSrcID(\nanoKEY2_KEYBOARD);
-		guitarID = this.getSrcID(\MD_IAC_to_SC);
+		launchpadID = this.getDeviceSrcID(\Launchpad_Mini_MK3_LPMiniMK3_MIDI_Out);
+		launchpadDAWID  = this.getDeviceSrcID(\Launchpad_Mini_MK3_LPMiniMK3_DAW_Out); // so that we can filter it out
+		footControllerID = this.getDeviceSrcID(\nanoKEY2_KEYBOARD);
+		guitarID = this.getDeviceSrcID(\MD_IAC_to_SC);
 
 		//DEBUG:
 		("LaunchpadDAWHandler is: " ++ launchpadDAWHandler).postln;
@@ -72,9 +72,9 @@ MIDIInputManager {
 
 	setMode { |newMode|
 		currentMode = newMode;
-		commandManager.currentState = newMode;
+		parentCommandManager.currentState = newMode;
 		this.handleModeChange(newMode);
-		{ commandManager.updateDisplay }.defer;
+		{ parentCommandManager.updateDisplay }.defer;
 	}
 
 	handleModeChange { |mode|
@@ -82,7 +82,7 @@ MIDIInputManager {
 			modes[\idle], {
 				queue.clear;
 				builder.resetNavigation;
-				"🔄 Tree navigation reset.".postln;
+				"Tree navigation reset.".postln;
 			},
 
 			modes[\prog], {
@@ -97,54 +97,56 @@ MIDIInputManager {
 
 				this.startNavigationFromString(6);
 
-				"🌲 Tree navigation started.".postln;
+				"Tree navigation started.".postln;
 			},
 
 			//---
 
 
+			modes[\queue], {
+				var queueText;
+				var payload = builder.getCurrentPayload;
 
-modes[\queue], {
-    var queueText;
-    var payload = builder.getCurrentPayload;
+				if (payload != lastEnqueuedPayload) {
+					("Current payload to queue: " ++ payload).postln;
+					queue.enqueueCommand(payload);
+					lastEnqueuedPayload = payload;
 
-    if (payload != lastEnqueuedPayload) {
-        ("🧩 Current payload to queue: " ++ payload).postln;
-        queue.enqueueCommand(payload);
-        lastEnqueuedPayload = payload;
+					if (builder.isAtLeaf) {
+						parentCommandManager.setStatus("🌿 Leaf node reached; payload: " ++ payload);
+					} {
+						parentCommandManager.setStatus("📥 Queued node: " ++ payload);
+					};
 
-        if (builder.isAtLeaf) {
-            commandManager.setStatus("🌿 Leaf node reached; payload: " ++ payload);
-        } {
-            commandManager.setStatus("📥 Queued node: " ++ payload);
-        };
+					queueText = queue.commandList.collect { |cmd| "- " ++ cmd.asString }.join("\n");
+					("Queue contents:\n" ++ queueText).postln;
 
-        queueText = queue.commandList.collect { |cmd| "- " ++ cmd.asString }.join("\n");
-        ("📋 Queue contents:\n" ++ queueText).postln;
+					{
+						/*parentCommandManager.display.display(\state, "Mode: queue");
+						parentCommandManager.display.display(\queue, "Current Queue:\n" ++ queueText);
+						parentCommandManager.display.display(\lastCommand, "Last Added: " ++ payload);*/
+						parentCommandManager.display.updateTextField(\state, "Mode: queue");
+						parentCommandManager.display.updateTextField(\queue, "Current Queue:\n" ++ queueText);
+						parentCommandManager.display.updateTextField(\lastCommand, "Last Added: " ++ payload);
 
-        {
-            commandManager.display.display(\state, "🧭 Mode: queue");
-            commandManager.display.display(\queue, "📋 Current Queue:\n" ++ queueText);
-            commandManager.display.display(\lastCommand, "🆕 Last Added: " ++ payload);
-        }.defer;
-    } {
-        ("⚠️ Duplicate payload ignored: " ++ payload).postln;
-        commandManager.setStatus("⚠️ Duplicate payload ignored");
-    };
+					}.defer;
+				} {
+					("⚠️ Duplicate payload ignored: " ++ payload).postln;
+					parentCommandManager.setStatus("⚠️ Duplicate payload ignored");
+				};
 
-    builder.resetNavigation;
-    "📥 Added node to queue and restarted navigation.".postln;
-    this.setMode(modes[\prog]);
-}
-,
+				builder.resetNavigation;
+				"Added node to queue and restarted navigation.".postln;
+				this.setMode(modes[\prog]);
+			},
 
 			//---
 
 			modes[\send], {
 				var path = queue.exportAsOSCPath;
-				("📋 Queue contents before export: " ++ queue.commandList).postln;
+				("Queue contents before export: " ++ queue.commandList).postln;
 
-				("📤 Sent queue as OSC: " ++ path).postln;
+				("Sent queue as OSC: " ++ path).postln;
 				queue.clear;
 			},
 			modes[\play], {
@@ -197,7 +199,7 @@ modes[\queue], {
 		};
 	}
 
-	getSrcID { |symbol|
+	getDeviceSrcID { |symbol|
 		^deviceUIDs[symbol];
 	}
 
@@ -211,7 +213,7 @@ modes[\queue], {
 		var srcID, symbol;
 
 		if (keyOrID.isKindOf(Symbol)) {
-			srcID = this.getSrcID(keyOrID);
+			srcID = this.getDeviceSrcID(keyOrID);
 			symbol = keyOrID;
 		}{
 			srcID = keyOrID;

@@ -4,16 +4,17 @@
 
 //previously known as MDCommandMC
 CommandManager {
-	var something, octave, pitchclass, gString;
+	//var something, octave, pitchclass, gString; // no longer used
+	//var states;
 	var <> currentState; // getter and setters for outside
-	var states;
+
 	var <>tree;
 	var <>builder;
 	var <>queue;
 	var <>display, <>displayText;
 	var filePath;
 	var <>midiManager;
-	var <>commandManager;
+	var <>parentCommandManager;
 
 
 	var launchpadHandler, footControllerHandler, guitarHandler;
@@ -23,30 +24,35 @@ CommandManager {
 		^super.new.init;
 	}
 
+
 	init {
+		//DEBUG
 		if (true) { "CommandManager created".postln };
 
-		// states = [\idle, \inTree, \inQueue];
 		currentState = \idle;
 
 		filePath = "~/CommandTreeSavefiles/myTree.json".standardizePath;
 
+
 		this.createNewTree;
 		this.createBuilder;
 		this.createCommandQueue;
+
 		display = UserDisplay.new;
 
 		midiManager = MIDIInputManager.new(builder, nil, nil, nil);
-		midiManager.commandManager = this;
+		midiManager.parentCommandManager = this;
 
 		^this
 	}
+
 
 	createNewTree {
 		tree = MDCommandTree.new("root");
 		tree.importJSONFile(filePath);
 		if (tree.notNil) {
 			"🔮 Tree created".postln;
+			//DEBUG
 			if (true) { tree.printTreePretty };
 		} {
 			"🔮 Couldn't create tree".postln;
@@ -56,7 +62,8 @@ CommandManager {
 	createBuilder {
 		builder = MDCommandBuilder.new(tree);
 		if (builder.notNil) {
-			"🔮 Builder created".postln;
+			//DEBUG
+			if (true) {"🔮 Builder created".postln};
 		} {
 			"🔮 Couldn't create builder".postln;
 		}
@@ -65,13 +72,15 @@ CommandManager {
 	createCommandQueue {
 		queue = MDCommandQueue.new;
 		if (queue.notNil) {
-			"🔮 Queue created".postln;
+			//DEBUG
+			if (true) {"🔮 Queue created".postln};
 		} {
 			"🔮 Couldn't create queue".postln;
 		}
 	}
 
-	print { |vel, num, chan|
+	// previously only called "print"
+	printMIDIInfo { |vel, num, chan|
 		("vel: " + vel).postln;
 		("num: " + num).postln;
 		("chan: " + chan).postln;
@@ -79,17 +88,17 @@ CommandManager {
 	}
 
 	updateDisplay {
-		var stateText, choicesText, children;
+		var modeText, nodeChoicesText, children;
 
 		// Show current state
-		stateText = "🧭 Mode: " ++ currentState.asString;
-		choicesText = "⚠️ No choices available.";
+		modeText = "🧭 Mode: " ++ currentState.asString;
+		nodeChoicesText = "⚠️ No choices available.";
 
 		if (currentState == \prog) {
 			children = builder.currentNode.children;
 
 			if (builder.isAtLeaf) {
-				choicesText = choicesText ++ "\n🌿 Leaf node reached.";
+				nodeChoicesText = nodeChoicesText ++ "\n🌿 Leaf node reached.";
 			};
 
 			if (children.notEmpty) {
@@ -97,25 +106,25 @@ CommandManager {
 					("🧪 Child: " ++ c.name ++ ", payload: " ++ c.payload).postln;
 				};
 
-				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n\n" ++
+				nodeChoicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n\n" ++
 				"📦 Available Choices:\n" ++
 				children.collect { |c|
 					"• Fret " ++ c.fret ++ " → " ++ c.name ++ " (payload: " ++ c.payload ++ ")"
 				}.join("\n");
 			} {
-				choicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n⚠️ No available choices.";
+				nodeChoicesText = "🎚 Current Node: " ++ builder.currentNode.name ++ "\n⚠️ No available choices.";
 			};
 		} {
-			choicesText = "";
+			nodeChoicesText = "";
 		};
 
 		("🖥 Updating display...").postln;
-		("State text: " ++ stateText).postln;
-		("Choices text: " ++ choicesText).postln;
+		("State text: " ++ modeText).postln;
+		("Choices text: " ++ nodeChoicesText).postln;
 
 		// Update individual display fields
-		{display.stateText.string = stateText;}.defer;
-		{display.userChoicesText.string = choicesText;}.defer;
+		{display.modeText.string = modeText;}.defer;
+		{display.userChoicesText.string = nodeChoicesText;}.defer;
 	}
 
 

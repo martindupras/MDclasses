@@ -5,7 +5,7 @@
 MDCommandNode {
 	var <>name, <>id, <>fret, <>parent, <>children;
 	var <> payload; // the "command" that will be inserted in the tree
-	//var <>depthTag;
+
 
 	*new { |name = "default", id = 1, fret = 1, parent = nil|
 		^super.new.init(name, id, fret, parent);
@@ -18,9 +18,8 @@ MDCommandNode {
 		this.parent = parent;
 		//this.children = List.new; // updated to following:
 		this.children = SortedList.new(nil, { |a, b| a.fret < b.fret });
-		//this.children = SortedList.new({ |a, b| a.fret < b.fret });
 
-		//if (children.isKindOf(List).not) updated to follwoing:
+		//if (children.isKindOf(List).not) updated to following:
 		if (this.children.isKindOf(SortedList).not) {
 			{
 				("⚠️ Children is not a SortedList in node '" ++ name ++ "'! It is: " ++ children.class).postln;
@@ -124,10 +123,6 @@ MDCommandNode {
 			^this.parent.notNil.if({ this.parent.getDepth + 1 }, { 0 })
 		}
 
-/*	tagByDepth { |depth|
-		this.depthTag = depth;
-		this.children.do { |c| c.tagByDepth(depth + 1) };
-	}*/
 
 		// ───── Tree Analysis ─────
 
@@ -135,10 +130,14 @@ MDCommandNode {
 			^this.children.size == 0
 		}
 
-		isDescendant { |node|
+	// isDescendant replaced with hasChild; clearer
+/*		isDescendant { |node|
+			^this.children.any { |c| c === node }
+		}*/
+
+		hasChild { |node|
 			^this.children.any { |c| c === node }
 		}
-
 		countDescendants {
 			if (this.isLeaf) { ^1 } {
 				^this.children.sum { |c| c.countDescendants }
@@ -173,7 +172,6 @@ MDCommandNode {
 		}
 
 
-		// ───── Tree Display ─────
 	// ───── Tree Display ─────
 printTreePretty { |level = 0, isLast = true, prefix = ""|
     var sortedChildren, connector, newPrefix;
@@ -200,38 +198,7 @@ printTreePretty { |level = 0, isLast = true, prefix = ""|
     };
 }
 
-/*		printTreePretty { |level = 0, isLast = true, prefix = ""|
-			var sortedChildren, connector, newPrefix;
-
-			// Print current node
-			connector = if (level == 0) { "" } { if (isLast) { "└── " } { "├── " } };
-			(prefix ++ connector ++ this.name ++ " (fret: " ++ this.fret ++ ", id: " ++ this.id ++ ")").postln;
-
-			// Prepare prefix for children
-			newPrefix = if (level == 0) { "" } {
-				prefix ++ if (isLast) { "    " } { "│   " }
-			};
-
-			// replaces following block because we now use SortedList
-			sortedChildren = this.children;
-
-			// Filter and sort children
-/*		sortedChildren = this.children.asArray.select { |child|
-			child.isKindOf(MDCommandNode) or: {
-				("❌ Unexpected child type: " ++ child.class).warn;
-				false
-			}
-		}.sort { |a, b| a.fret < b.fret };*/
-
-			// Recursively print children
-			sortedChildren.do { |child, i|
-				var last = (i == (sortedChildren.size - 1));
-				child.printTreePretty(level + 1, last, newPrefix);
-			};
-		}*/
-
-
-		// ───── Serialization ─────
+		// ───── Serialization for exporting ─────
 
 		asDictRecursively {
 			^(

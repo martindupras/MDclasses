@@ -3,12 +3,12 @@
 // taken out of MIDIInputManager.sc to make smaller file and cleaner organisation.
 
 MIDIInputHandler {
-	var <>inputManager;
+	var <>manager;
 
-	*new { |inputManager| ^super.new.init(inputManager); }
+	*new { |manager| ^super.new.init(manager); }
 
-	init { |inputManager|
-		this.inputManager = inputManager;
+	init { |manager|
+		this.manager = manager;
 		^this
 	}
 
@@ -18,12 +18,12 @@ MIDIInputHandler {
 }
 
 LaunchpadHandler  {
-	var <>inputManager;
+	var <>manager;
 
-	*new { |inputManager| ^super.new.init(inputManager); }
+	*new { |manager| ^super.new.init(manager); }
 
-	init { |inputManager|
-		this.inputManager = inputManager;
+	init { |manager|
+		this.manager = manager;
 		^this
 	}
 
@@ -33,12 +33,12 @@ LaunchpadHandler  {
 }
 
 LaunchpadDAWHandler {
-	var <>inputManager;
+	var <>manager;
 
-	*new { |inputManager| ^super.new.init(inputManager); }
+	*new { |manager| ^super.new.init(manager); }
 
-	init { |inputManager|
-		this.inputManager = inputManager;
+	init { |manager|
+		this.manager = manager;
 		^this
 	}
 
@@ -48,31 +48,31 @@ LaunchpadDAWHandler {
 }
 
 FootControllerHandler {
-	var <>inputManager;
+	var <>manager;
 
-	*new { |inputManager|
-		if (inputManager.isNil) {
-			Error("FootControllerHandler requires a inputManager").throw;
+	*new { |manager|
+		if (manager.isNil) {
+			Error("FootControllerHandler requires a manager").throw;
 		};
-		^super.new.init(inputManager);
+		^super.new.init(manager);
 	}
 
-	init { |inputManager|
-		this.inputManager = inputManager;
-		("✅ FootControllerHandler received inputManager: " ++ inputManager).postln;
+	init { |manager|
+		this.manager = manager;
+		("✅ FootControllerHandler received manager: " ++ manager).postln;
 		^this
 	}
 
 	handleMessage { |channel, type, value|
-		("🧪 inputManager class is: " ++ inputManager.class).postln;
+		("🧪 manager class is: " ++ manager.class).postln;
 
 
 		if (type === \noteOn) {
 			switch (value,
-				36, { inputManager.setMode(inputManager.modes[\idle]) },
-				38, { inputManager.setMode(inputManager.modes[\prog]) },
-				40, { inputManager.setMode(inputManager.modes[\queue]) },
-				41, { inputManager.setMode(inputManager.modes[\send]) },
+				36, { manager.setMode(manager.modes[\idle]) },
+				38, { manager.setMode(manager.modes[\prog]) },
+				40, { manager.setMode(manager.modes[\queue]) },
+				41, { manager.setMode(manager.modes[\send]) },
 				{ ("⚠️ No action for note: " ++ value).postln }
 			);
 		}
@@ -80,17 +80,17 @@ FootControllerHandler {
 }
 
 GuitarMIDIHandler {
-	var <>inputManager;
+	var <>manager;
 
-	*new { |inputManager|
+	*new { |manager|
 		var instance = super.new;
-		instance.init(inputManager);
+		instance.init(manager);
 		^instance
 	}
 
-	init { |inputManager|
-		this.inputManager = inputManager;
-		("✅ GuitarMIDIHandler received inputManager: " ++ inputManager).postln;
+	init { |manager|
+		this.manager = manager;
+		("✅ GuitarMIDIHandler received manager: " ++ manager).postln;
 		^this
 	}
 
@@ -108,7 +108,7 @@ GuitarMIDIHandler {
 		};
 
 		// ✅ Check current mode
-		if (inputManager.currentMode == inputManager.modes[\prog]) {
+		if (manager.currentMode == manager.modes[\prog]) {
 			"✅ currentMode is prog".postln;
 
 			stringBasePitches = (
@@ -132,17 +132,17 @@ GuitarMIDIHandler {
 					", calculated fret: " ++ fret).postln;
 
 				// ✅ Navigation logic
-				if (inputManager.waitingForString == stringNumber) {
-					inputManager.waitingForString = nil;
-					inputManager.navigationCallback.value(fret);
+				if (manager.waitingForString == stringNumber) {
+					manager.waitingForString = nil;
+					manager.navigationCallback.value(fret);
 				};
 			} {
 				("⚠️ Unrecognized channel: " ++ channel ++ ". No base pitch defined.").postln;
 			}
 		} {
-			("❌ currentMode is: " ++ inputManager.currentMode).postln;
+			("❌ currentMode is: " ++ manager.currentMode).postln;
 		};
 
-		{ inputManager.parentCommandManager.updateDisplay; }.defer;
+		{ manager.commandManager.updateDisplay; }.defer;
 	}
 }

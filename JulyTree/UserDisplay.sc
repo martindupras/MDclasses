@@ -6,12 +6,11 @@
 UserDisplay {
 
 	var <>window;
-	var <>stateText;
+	var <>modeText;
 	var <>queueText;
 	var <>lastCommandText;
 	var <>userChoicesText;
 	var <>statusText;
-	//var window, stateText, queueText , lastCommandText, userChoicesText;
 
 	*new{
 		^super.new.init
@@ -24,7 +23,7 @@ UserDisplay {
 		window = Window("user display", Rect(10, 400, 800, 600));
 
 		// create the fields:
-		stateText = StaticText(window).string_("stateText");
+		modeText = StaticText(window).string_("modeText");
 		queueText = StaticText(window).string_("queueText");
 		lastCommandText = StaticText(window).string_("lastCommandText");
 		userChoicesText = StaticText(window).string_("userChoicesText");
@@ -34,7 +33,7 @@ UserDisplay {
 		// add layouts to the window
 		window.layout =
 		VLayout(
-			stateText,
+			modeText,
 			queueText,
 			lastCommandText,
 			userChoicesText,
@@ -46,10 +45,10 @@ UserDisplay {
 		^this // return instance of UserDisplay
 	}
 
-	display{
+	updateTextField{
 		|box, msg|
 		switch (box,
-			\state, { stateText.string_(msg)},
+			\state, { modeText.string_(msg)},
 			\queue, { queueText.string_(msg)},
 			\lastCommand, { lastCommandText.string_(msg)},
 			\choices, { userChoicesText.string_(msg)}
