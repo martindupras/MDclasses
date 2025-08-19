@@ -4,14 +4,11 @@
 // allows editing of the tree step by step.
 
 /*
-Loads your JSON tree from /Users/martindupras/CommandTreeSavefiles/myTree.json
+Loads JSON tree from /Users/martindupras/CommandTreeSavefiles/myTree.json
 Displays the tree in the console
-Lets you add branches interactively
+Adds branches interactively
 Saves the updated tree back to the same file
 */
-
-// load up tree:
-// Load the tree from a JSON file
 
 
 ///// STEP 1 - LOAD
@@ -22,7 +19,7 @@ var path;
 path = "/Users/martindupras/CommandTreeSavefiles/myTree.json";
 ~tree = MDCommandTree.new;
 ~tree.importJSONFile(path);
-"✅ Tree loaded.".postln;
+"JSON Tree loaded from file.".postln;
 )
 
 ///// STEP 2 - PRINT
@@ -59,7 +56,7 @@ if (removed.notNil) {
     ("⚠️ Failed to remove node " ++ nodeIdToRemove).postln;
 };
 
-// Always reprint after mutation
+// Always reprint after change
 ~tree.printTreePretty;
 )
 
@@ -68,9 +65,9 @@ if (removed.notNil) {
 // Save tree to JSON file
 var savePath;
 
-savePath = "/Users/martindupras/CommandTreeSavefiles/UpdatedTree.json"; // ← Change if needed
+savePath = "/Users/martindupras/CommandTreeSavefiles/UpdatedTree.json";
 ~tree.exportJSONFile(savePath);
-"💾 Tree saved to: ".postln;
+("Tree saved to:" + savePath).postln;
 savePath.postln;
 )
 
@@ -86,15 +83,15 @@ savePath = "/Users/martindupras/CommandTreeSavefiles/testTree.json";
 
 // Save current tree
 ~tree.exportJSONFile(savePath);
-"💾 Tree saved.".postln;
+"Tree saved.".postln;
 
 // Reload into a new tree instance
 reloadedTree = MDCommandTree.new;
 if (reloadedTree.importJSONFile(savePath)) {
-    "✅ Tree reloaded successfully.".postln;
+    "Tree reloaded successfully.".postln;
     reloadedTree.printTreePretty;
 } {
-    "❌ Failed to reload tree.".postln;
+    "Failed to reload tree.".postln;
 };
 )
 
